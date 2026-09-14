@@ -53,7 +53,7 @@ public class MeController : LoggedInControllerBase
             if (error != null) return error;
 
             // get user with additional properties
-            var userDoc = await Db.Users
+            var userDoc = await Db.WithinTenancy_Users
                 .Include(u => u.AdditionalProperties)
                 .FirstOrDefaultAsync(u => u.Id == user!.Id);
 
@@ -132,7 +132,7 @@ public class MeController : LoggedInControllerBase
             var (user, error) = await GetCurrentUserAsync();
             if (error != null) return error;
 
-            var userDoc = await Db.Users.FirstOrDefaultAsync(u => u.Id == user!.Id);
+            var userDoc = await Db.WithinTenancy_Users.FirstOrDefaultAsync(u => u.Id == user!.Id);
             if (userDoc == null)
             {
                 return StatusCode(StatusCodes.Status404NotFound, new FailureResponseModel { Detail = "User not found" });
@@ -205,7 +205,7 @@ public class MeController : LoggedInControllerBase
                 });
             }
 
-            var userDoc = await Db.Users.FirstOrDefaultAsync(u => u.Id == user!.Id);
+            var userDoc = await Db.WithinTenancy_Users.FirstOrDefaultAsync(u => u.Id == user!.Id);
             if (userDoc == null)
             {
                 return StatusCode(StatusCodes.Status404NotFound, new FailureResponseModel
@@ -259,7 +259,7 @@ public class MeController : LoggedInControllerBase
 
             var currentNormalized = this._passwordService.NormalisePassword(request.CurrentPasswordSha512, request.CurrentPasswordSha512);
 
-            var userDoc = await Db.Users.FirstOrDefaultAsync(u => u.Id == user!.Id);
+            var userDoc = await Db.WithinTenancy_Users.FirstOrDefaultAsync(u => u.Id == user!.Id);
             if (userDoc == null)
             {
                 return StatusCode(StatusCodes.Status400BadRequest, new FailureResponseModel

@@ -65,7 +65,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 var totpError = await RequireTotpAsync(user!.Id);
                 if (totpError != null) return totpError;
 
-                var userDoc = await Db.Users
+                var userDoc = await Db.WithinTenancy_Users
                     .Include(u => u.AdditionalProperties)
                     .FirstOrDefaultAsync(u => u.Id == userId);
 
@@ -259,7 +259,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 var totpError = await RequireTotpAsync(user!.Id);
                 if (totpError != null) return totpError;
 
-                var userDoc = await Db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                var userDoc = await Db.WithinTenancy_Users.FirstOrDefaultAsync(u => u.Id == userId);
 
                 if (userDoc == null)
                 {
@@ -335,7 +335,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                     });
                 }
 
-                var userDoc = await Db.Users
+                var userDoc = await Db.WithinTenancy_Users
                     .Include(u => u.AdditionalProperties)
                     .Include(u => u.Files)
                     .FirstOrDefaultAsync(u => u.Id == userId);
@@ -351,7 +351,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                     Db.RemoveRange(userDoc.AdditionalProperties);
                 }
 
-                Db.Users.Remove(userDoc);
+                Db.WithinTenancy_Users.Remove(userDoc);
 
                 await this._userDocService.WriteToAuditLog(
                     actorUserId: user.Id,
@@ -389,11 +389,11 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             var adminError = await RequireAdminAsync();
             if (adminError != null) return adminError;
 
-            var target = await Db.Users.FindAsync(userId);
+            var target = await Db.WithinTenancy_Users.FindAsync(userId);
             if (target == null) return StatusCode(StatusCodes.Status404NotFound);
 
             // invalidate any existing unused tokens for this user
-            var oldTokens = await Db.UserPasswordSetTokens
+            var oldTokens = await Db.WithinTenancy_UserPasswordSetTokens
                 .Where(t => t.UserId == userId && !t.UsedAtUtc.HasValue)
                 .ToListAsync();
             foreach (var t in oldTokens)
@@ -416,7 +416,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 Reason = PasswordSetTokenReasonEnum.PasswordReset,
             };
 
-            Db.UserPasswordSetTokens.Add(token);
+            Db.WithinTenancy_UserPasswordSetTokens.Add(token);
             await Db.SaveChangesAsync();
 
             // queue the email
@@ -526,12 +526,12 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 var adminError = await RequireAdminAsync();
                 if (adminError != null) return adminError;
 
-                var targetExists = await Db.Users.AnyAsync(u => u.Id == userId);
+                var targetExists = await Db.WithinTenancy_Users.AnyAsync(u => u.Id == userId);
                 if (!targetExists)
                     return StatusCode(StatusCodes.Status404NotFound,
                         new FailureResponseModel { Detail = "User not found" });
 
-                var entries = await Db.Log_UserModificationEvents
+                var entries = await Db.WithinTenancy_Log_UserModificationEvents
                     .Where(e => e.UserId == userId)
                     .Include(e => e.CreatedByUser)
                     .Include(e => e.User)

@@ -333,21 +333,21 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
             if (yourself.IsCaseWorker)
             {
                 // case workers can see clients on cases they are assigned to
-                return await Db.CaseWorkers.AnyAsync(cw =>
+                return await Db.WithinTenancy_CaseWorkers.AnyAsync(cw =>
                     cw.UserId == yourself.Id
                     && (
-                        Db.CaseClients.Any(cc => cc.CaseId == cw.CaseId && cc.UserId == targetUser.Id)
-                        || Db.CaseWorkers.Any(cw2 => cw2.CaseId == cw.CaseId && cw2.UserId == targetUser.Id)
+                        Db.WithinTenancy_CaseClients.Any(cc => cc.CaseId == cw.CaseId && cc.UserId == targetUser.Id)
+                        || Db.WithinTenancy_CaseWorkers.Any(cw2 => cw2.CaseId == cw.CaseId && cw2.UserId == targetUser.Id)
                     )
                 );
             }
 
             // non-admins see users they share cases with (as co-clients or co-workers)
-            return await Db.CaseClients.AnyAsync(cc =>
+            return await Db.WithinTenancy_CaseClients.AnyAsync(cc =>
                 cc.UserId == yourself.Id
                 && (
-                    Db.CaseClients.Any(cc2 => cc2.CaseId == cc.CaseId && cc2.UserId == targetUser.Id)
-                    || Db.CaseWorkers.Any(cw => cw.CaseId == cc.CaseId && cw.UserId == targetUser.Id)
+                    Db.WithinTenancy_CaseClients.Any(cc2 => cc2.CaseId == cc.CaseId && cc2.UserId == targetUser.Id)
+                    || Db.WithinTenancy_CaseWorkers.Any(cw => cw.CaseId == cc.CaseId && cw.UserId == targetUser.Id)
                 )
             );
         }
@@ -363,9 +363,9 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
             if (yourself.IsCaseWorker)
             {
                 // case workers can modify clients on their assigned cases
-                return await Db.CaseWorkers.AnyAsync(cw =>
+                return await Db.WithinTenancy_CaseWorkers.AnyAsync(cw =>
                     cw.UserId == yourself.Id
-                    && Db.CaseClients.Any(cc => cc.CaseId == cw.CaseId && cc.UserId == targetUser.Id)
+                    && Db.WithinTenancy_CaseClients.Any(cc => cc.CaseId == cw.CaseId && cc.UserId == targetUser.Id)
                 );
             }
 

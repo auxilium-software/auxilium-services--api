@@ -51,7 +51,7 @@ public class WEMWBSController : LoggedInControllerBase
             var adminError = await RequireAdminAsync();
             if (adminError != null) return adminError;
 
-            var query = Db.UserWemwbsAssessments.AsQueryable();
+            var query = Db.WithinTenancy_UserWemwbsAssessments.AsQueryable();
 
             // apply sorting
             query = ApplySorting(query, sortBy, sortOrder);
@@ -100,7 +100,7 @@ public class WEMWBSController : LoggedInControllerBase
             var (user, error) = await GetCurrentUserAsync();
             if (error != null) return error;
 
-            var assessment = await Db.UserWemwbsAssessments
+            var assessment = await Db.WithinTenancy_UserWemwbsAssessments
                 .FirstOrDefaultAsync(w => w.Id == assessmentId);
 
             if (assessment == null)
@@ -193,7 +193,7 @@ public class WEMWBSController : LoggedInControllerBase
                     });
                 }
 
-                var subjectExists = await Db.Users.AnyAsync(u => u.Id == request.SubjectUserId);
+                var subjectExists = await Db.WithinTenancy_Users.AnyAsync(u => u.Id == request.SubjectUserId);
                 if (!subjectExists)
                 {
                     return StatusCode(StatusCodes.Status400BadRequest, new FailureResponseModel
@@ -225,7 +225,7 @@ public class WEMWBSController : LoggedInControllerBase
                 FeelingCheerfulScore = request.Responses.FeelingCheerfulScore
             };
 
-            Db.UserWemwbsAssessments.Add(assessment);
+            Db.WithinTenancy_UserWemwbsAssessments.Add(assessment);
             await Db.SaveChangesAsync();
 
             return StatusCode(StatusCodes.Status201Created, MapToResponse(assessment));
@@ -263,7 +263,7 @@ public class WEMWBSController : LoggedInControllerBase
             if (adminError != null) return adminError;
 
             // assessments ABOUT the target user (subject), regardless of who authored them
-            var query = Db.UserWemwbsAssessments
+            var query = Db.WithinTenancy_UserWemwbsAssessments
                 .Where(w => w.UserId == targetUserId);
 
             // apply sorting
@@ -317,7 +317,7 @@ public class WEMWBSController : LoggedInControllerBase
             var adminError = await RequireAdminAsync();
             if (adminError != null) return adminError;
 
-            var assessment = await Db.UserWemwbsAssessments.FindAsync(assessmentId);
+            var assessment = await Db.WithinTenancy_UserWemwbsAssessments.FindAsync(assessmentId);
 
             if (assessment == null)
             {
@@ -327,7 +327,7 @@ public class WEMWBSController : LoggedInControllerBase
                 });
             }
 
-            Db.UserWemwbsAssessments.Remove(assessment);
+            Db.WithinTenancy_UserWemwbsAssessments.Remove(assessment);
             await Db.SaveChangesAsync();
 
             return StatusCode(StatusCodes.Status204NoContent);
@@ -356,7 +356,7 @@ public class WEMWBSController : LoggedInControllerBase
             if (error != null) return error;
 
             // statistics over assessments ABOUT me (subject), not ones I authored
-            var assessments = await Db.UserWemwbsAssessments
+            var assessments = await Db.WithinTenancy_UserWemwbsAssessments
                 .Where(w => w.UserId == user!.Id)
                 .OrderBy(w => w.CreatedAtUtc)
                 .ToListAsync();

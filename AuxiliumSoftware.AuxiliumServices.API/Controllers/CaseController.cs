@@ -70,10 +70,10 @@ public class CaseController : LoggedInControllerBase
             };
 
             //TODO: don't use EF directly here
-            Db.Cases.Add(caseEntity);
+            Db.WithinTenancy_Cases.Add(caseEntity);
 
             // add currently logged in user as a client
-            Db.CaseClients.Add(new CaseClientEntityModel
+            Db.WithinTenancy_CaseClients.Add(new CaseClientEntityModel
             {
                 Id = Guid.NewGuid(),
                 CaseId = caseEntity.Id,
@@ -138,7 +138,7 @@ public class CaseController : LoggedInControllerBase
             var (user, error) = await GetCurrentUserAsync();
             if (error != null) return error;
 
-            var query = Db.Cases
+            var query = Db.WithinTenancy_Cases
                 .Include(c => c.Clients)
                 .Include(c => c.Workers)
                 .Include(c => c.Files)
@@ -157,7 +157,7 @@ public class CaseController : LoggedInControllerBase
                 .Take(pageSize)
                 .ToListAsync();
             var caseIds = cases.Select(c => c.Id).ToList();
-            var assignmentEvents = await Db.Log_CaseModificationEvents
+            var assignmentEvents = await Db.WithinTenancy_Log_CaseModificationEvents
                 .Where(e => caseIds.Contains(e.CaseId)
                     && (e.EntityType == CaseEntityTypeEnum.Case_Client || e.EntityType == CaseEntityTypeEnum.Case_Worker)
                     && (e.Action == AuditLogActionTypeEnum.Assignment || e.Action == AuditLogActionTypeEnum.Unassignment))
@@ -204,7 +204,7 @@ public class CaseController : LoggedInControllerBase
             var (user, error) = await GetCurrentUserAsync();
             if (error != null) return error;
 
-            var query = Db.Cases
+            var query = Db.WithinTenancy_Cases
                 .Include(c => c.Clients)
                 .Include(c => c.Workers)
                 .Include(c => c.Files)
@@ -223,7 +223,7 @@ public class CaseController : LoggedInControllerBase
                 .Take(pageSize)
                 .ToListAsync();
             var caseIds = cases.Select(c => c.Id).ToList();
-            var auditLog = await Db.Log_CaseModificationEvents
+            var auditLog = await Db.WithinTenancy_Log_CaseModificationEvents
                 .Where(e => caseIds.Contains(e.CaseId)
                     && (e.EntityType == CaseEntityTypeEnum.Case_Client || e.EntityType == CaseEntityTypeEnum.Case_Worker)
                     && (e.Action == AuditLogActionTypeEnum.Assignment || e.Action == AuditLogActionTypeEnum.Unassignment))
@@ -278,7 +278,7 @@ public class CaseController : LoggedInControllerBase
             if (user!.IsAdministrator)
             {
                 // admins see all cases
-                query = Db.Cases
+                query = Db.WithinTenancy_Cases
                     .Include(c => c.Clients)
                     .Include(c => c.Workers)
                     .Include(c => c.Files)
@@ -289,7 +289,7 @@ public class CaseController : LoggedInControllerBase
             else
             {
                 // regular users see cases where they are client OR worker
-                query = Db.Cases
+                query = Db.WithinTenancy_Cases
                     .Include(c => c.Clients)
                     .Include(c => c.Workers)
                     .Include(c => c.Files)
@@ -326,7 +326,7 @@ public class CaseController : LoggedInControllerBase
                 .Take(pageSize)
                 .ToListAsync();
             var caseIds = cases.Select(c => c.Id).ToList();
-            var assignmentEvents = await Db.Log_CaseModificationEvents
+            var assignmentEvents = await Db.WithinTenancy_Log_CaseModificationEvents
                 .Where(e => caseIds.Contains(e.CaseId)
                     && (e.EntityType == CaseEntityTypeEnum.Case_Client || e.EntityType == CaseEntityTypeEnum.Case_Worker)
                     && (e.Action == AuditLogActionTypeEnum.Assignment || e.Action == AuditLogActionTypeEnum.Unassignment))

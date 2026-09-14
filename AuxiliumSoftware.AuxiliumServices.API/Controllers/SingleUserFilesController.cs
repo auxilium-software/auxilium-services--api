@@ -46,7 +46,7 @@ public class SingleUserFilesController : LoggedInControllerBase
             var (user, error) = await GetCurrentUserAsync();
             if (error != null) return error;
 
-            var targetUser = await Db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            var targetUser = await Db.WithinTenancy_Users.FirstOrDefaultAsync(u => u.Id == userId);
             if (targetUser == null)
             {
                 return StatusCode(StatusCodes.Status404NotFound, new FailureResponseModel { Detail = "User not found" });
@@ -275,7 +275,7 @@ public class SingleUserFilesController : LoggedInControllerBase
 
         if (currentUser.IsCaseWorker)
         {
-            var hasAccess = await Db.Cases
+            var hasAccess = await Db.WithinTenancy_Cases
                 .Where(c => c.Workers!.Any(w => w.UserId == currentUser.Id))
                 .AnyAsync(c => c.Clients!.Any(cl => cl.UserId == targetUserId));
 
@@ -284,7 +284,7 @@ public class SingleUserFilesController : LoggedInControllerBase
 
         if (currentUser.IsCaseWorkerManager)
         {
-            var hasAccess = await Db.Cases
+            var hasAccess = await Db.WithinTenancy_Cases
                 .Where(c => c.Workers!.Any(w => w.UserId == currentUser.Id))
                 .AnyAsync(c =>
                     c.Clients!.Any(cl => cl.UserId == targetUserId) ||

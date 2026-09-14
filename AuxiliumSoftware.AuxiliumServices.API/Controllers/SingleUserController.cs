@@ -65,7 +65,7 @@ public class SingleUserController : LoggedInControllerBase
             var (user, error) = await GetCurrentUserAsync();
             if (error != null) return error;
 
-            UserEntityModel targetUser = Db.Users.FirstOrDefault(u => u.Id == userId);
+            UserEntityModel targetUser = Db.WithinTenancy_Users.FirstOrDefault(u => u.Id == userId);
             if (targetUser == null)
                 return StatusCode(StatusCodes.Status404NotFound, new FailureResponseModel
                 {
@@ -78,7 +78,7 @@ public class SingleUserController : LoggedInControllerBase
                     Detail = "You may not access this user."
                 });
 
-            var userDoc = await Db.Users
+            var userDoc = await Db.WithinTenancy_Users
                 .Include(u => u.AdditionalProperties)
                 .Include(u => u.Files)
                 .FirstOrDefaultAsync(u => u.Id == userId);
@@ -119,7 +119,7 @@ public class SingleUserController : LoggedInControllerBase
             var (user, error) = await GetCurrentUserAsync();
             if (error != null) return error;
 
-            UserEntityModel targetUser = Db.Users.FirstOrDefault(u => u.Id == userId);
+            UserEntityModel targetUser = Db.WithinTenancy_Users.FirstOrDefault(u => u.Id == userId);
             if (targetUser == null)
                 return StatusCode(StatusCodes.Status404NotFound, new FailureResponseModel
                 {
@@ -135,7 +135,7 @@ public class SingleUserController : LoggedInControllerBase
             var totpError = await RequireTotpAsync(user!.Id);
             if (totpError != null) return totpError;
 
-            var userDoc = await Db.Users
+            var userDoc = await Db.WithinTenancy_Users
                 .Include(u => u.AdditionalProperties)
                 .Include(u => u.Files)
                 .FirstOrDefaultAsync(u => u.Id == userId);

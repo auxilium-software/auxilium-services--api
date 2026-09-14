@@ -20,7 +20,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
                         var weekStart = now.AddDays(-7 * (i + 1)).Date;
                         var weekEnd = now.AddDays(-7 * i).Date;
 
-                        var count = await Db.Users
+                        var count = await Db.WithinTenancy_Users
                             .CountAsync(u => u.CreatedAtUtc >= weekStart && u.CreatedAtUtc < weekEnd);
 
                         labels.Add($"Week {4 - i}");
@@ -36,7 +36,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
                             .AddMonths(-i);
                         var monthEnd = monthStart.AddMonths(1);
 
-                        var count = await Db.Users
+                        var count = await Db.WithinTenancy_Users
                             .CountAsync(u => u.CreatedAtUtc >= monthStart && u.CreatedAtUtc < monthEnd);
 
                         labels.Add(monthStart.ToString("MMM"));
@@ -46,7 +46,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
 
                 case "all":
                     // grab the oldest user to figure out the start date
-                    var oldestUser = await Db.Users
+                    var oldestUser = await Db.WithinTenancy_Users
                         .OrderBy(u => u.CreatedAtUtc)
                         .FirstOrDefaultAsync();
 
@@ -75,7 +75,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
                         {
                             var monthEnd = date.AddMonths(1);
 
-                            var count = await Db.Users
+                            var count = await Db.WithinTenancy_Users
                                 .CountAsync(u => u.CreatedAtUtc >= date && u.CreatedAtUtc < monthEnd);
 
                             labels.Add(date.ToString("MMM yy"));
@@ -95,7 +95,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
                         {
                             var quarterEnd = date.AddMonths(3);
 
-                            var count = await Db.Users
+                            var count = await Db.WithinTenancy_Users
                                 .CountAsync(u => u.CreatedAtUtc >= date && u.CreatedAtUtc < quarterEnd);
 
                             var quarterNum = ((date.Month - 1) / 3) + 1;
@@ -111,7 +111,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
                             var yearStart = new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
                             var yearEnd = yearStart.AddYears(1);
 
-                            var count = await Db.Users
+                            var count = await Db.WithinTenancy_Users
                                 .CountAsync(u => u.CreatedAtUtc >= yearStart && u.CreatedAtUtc < yearEnd);
 
                             labels.Add(year.ToString());
@@ -127,7 +127,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
                         var dayStart = now.AddDays(-i).Date;
                         var dayEnd = dayStart.AddDays(1);
 
-                        var count = await Db.Users
+                        var count = await Db.WithinTenancy_Users
                             .CountAsync(u => u.CreatedAtUtc >= dayStart && u.CreatedAtUtc < dayEnd);
 
                         labels.Add(dayStart.ToString("ddd"));
@@ -146,7 +146,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
             };
 
             var cumulativeValues = new List<int>();
-            var runningTotal = await Db.Users
+            var runningTotal = await Db.WithinTenancy_Users
                 .CountAsync(u => u.CreatedAtUtc < periodStart);
 
             foreach (var value in values)
@@ -165,7 +165,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
 
         public static async Task<List<LanguageDistributionItem>> GetLanguageDistributionData(AuxiliumDbContext Db)
         {
-            var languageDistribution = await Db.Users
+            var languageDistribution = await Db.WithinTenancy_Users
                 .Where(u => u.LanguagePreference != null)
                 .GroupBy(u => u.LanguagePreference)
                 .Select(g => new LanguageDistributionItem
@@ -178,7 +178,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
                 .ToListAsync();
 
             // handle users with no language preference (which shouldn't happen, but edge case yanno lol)
-            var noLanguageCount = await Db.Users
+            var noLanguageCount = await Db.WithinTenancy_Users
                 .CountAsync(u => u.LanguagePreference == null);
 
             if (noLanguageCount > 0)

@@ -109,7 +109,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 var descriptionAttr = field?.GetCustomAttribute<SystemSettingDescriptionAttribute>();
                 var recommendationAttr = field?.GetCustomAttribute<SystemSettingRecommendationAttribute>();
 
-                var dbSetting = await this.Db.System_Settings
+                var dbSetting = await this.Db.WithinTenancy_System_Settings
                     .AsNoTracking()
                     .Where(s => s.ConfigKey == key)
                     .OrderByDescending(s => s.CreatedAtUtc)
@@ -169,7 +169,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             if (!TryResolveSettingKey(settingKey, out var resolvedKey))
                 return StatusCode(StatusCodes.Status404NotFound, new { message = $"Setting not found: {settingKey}" });
 
-            var setting = await this.Db.System_Settings
+            var setting = await this.Db.WithinTenancy_System_Settings
                 .AsNoTracking()
                 .Where(s => s.ConfigKey == resolvedKey)
                 .OrderByDescending(s => s.CreatedAtUtc)
@@ -203,7 +203,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             var adminError = await this.RequireAdminAsync();
             if (adminError != null) return adminError;
 
-            var history = await this.Db.System_Settings
+            var history = await this.Db.WithinTenancy_System_Settings
                 .AsNoTracking()
                 .Where(s => s.ConfigKey == settingKey)
                 .OrderByDescending(s => s.CreatedAtUtc)
@@ -242,7 +242,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 request.ReasonForModification
             );
 
-            var setting = await this.Db.System_Settings
+            var setting = await this.Db.WithinTenancy_System_Settings
                 .AsNoTracking()
                 .Where(s => s.ConfigKey == settingKey)
                 .OrderByDescending(s => s.CreatedAtUtc)

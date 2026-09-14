@@ -46,7 +46,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             var isAuthenticated = userId != null;
             Guid? userGuid = isAuthenticated ? Guid.Parse(userId) : null;
 
-            var query = _db.System_Bulletins
+            var query = _db.WithinTenancy_System_Bulletins
                 .Where(b => b.IsActive)
                 .Where(b => b.StartsAtUtc <= now)
                 .Where(b => b.EndsAtUtc == null || b.EndsAtUtc > now);

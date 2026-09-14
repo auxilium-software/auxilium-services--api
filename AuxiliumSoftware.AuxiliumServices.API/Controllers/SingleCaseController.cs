@@ -61,7 +61,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 var (user, error) = await GetCurrentUserAsync();
                 if (error != null) return error;
 
-                var caseEntity = await Db.Cases
+                var caseEntity = await Db.WithinTenancy_Cases
                     .Include(c => c.Clients)
                     .Include(c => c.Workers)
                     .Include(c => c.Files)
@@ -89,7 +89,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                     });
                 }
 
-var auditLog = await Db.Log_CaseModificationEvents
+var auditLog = await Db.WithinTenancy_Log_CaseModificationEvents
     .Where(a => a.CaseId == caseEntity.Id
         && (a.EntityType == CaseEntityTypeEnum.Case_Client || a.EntityType == CaseEntityTypeEnum.Case_Worker)
         && (a.Action == AuditLogActionTypeEnum.Assignment || a.Action == AuditLogActionTypeEnum.Unassignment))
@@ -122,7 +122,7 @@ var auditLog = await Db.Log_CaseModificationEvents
                 var (user, error) = await GetCurrentUserAsync();
                 if (error != null) return error;
 
-                var caseEntity = await Db.Cases
+                var caseEntity = await Db.WithinTenancy_Cases
                     .Include(c => c.Clients)
                     .Include(c => c.Workers)
                     .FirstOrDefaultAsync(c => c.Id == caseId);

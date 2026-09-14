@@ -45,7 +45,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             var adminError = await RequireAdminAsync();
             if (adminError != null) return adminError;
 
-            var query = this.Db.System_Bulletins;
+            var query = this.Db.WithinTenancy_System_Bulletins;
 
             var bulletins = await query
                 .OrderByDescending(b => b.Severity)
@@ -100,7 +100,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 SpecificUserId = request.SpecificUserId
             };
 
-            this.Db.System_Bulletins.Add(bulletin);
+            this.Db.WithinTenancy_System_Bulletins.Add(bulletin);
             await this.Db.SaveChangesAsync();
 
             return StatusCode(StatusCodes.Status201Created, new SystemBulletinAdminResponseModel
@@ -132,7 +132,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             var adminError = await RequireAdminAsync();
             if (adminError != null) return adminError;
 
-            var bulletin = await this.Db.System_Bulletins.FindAsync(id);
+            var bulletin = await this.Db.WithinTenancy_System_Bulletins.FindAsync(id);
 
             if (bulletin == null)
                 return StatusCode(StatusCodes.Status404NotFound);
@@ -157,18 +157,18 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             if (error != null) return error;
 
 
-            var bulletin = await this.Db.System_Bulletins
+            var bulletin = await this.Db.WithinTenancy_System_Bulletins
                 .FirstOrDefaultAsync(b => b.Id == id && b.IsActive && b.IsDismissible);
 
             if (bulletin == null)
                 return StatusCode(StatusCodes.Status404NotFound);
 
-            var alreadyDismissed = await this.Db.Log_SystemBulletinEntryDismissals
+            var alreadyDismissed = await this.Db.WithinTenancy_Log_SystemBulletinEntryDismissals
                 .AnyAsync(d => d.SystemBulletinId == id && d.CreatedByUserId == user.Id);
 
             if (!alreadyDismissed)
             {
-                this.Db.Log_SystemBulletinEntryDismissals.Add(new LogSystemBulletinEntryDismissalEventEntityModel
+                this.Db.WithinTenancy_Log_SystemBulletinEntryDismissals.Add(new LogSystemBulletinEntryDismissalEventEntityModel
                 {
                     Id = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.Log_SystemBulletin_EntryDismissal_EventEntry),
                     CreatedByUserId = user.Id,

@@ -42,7 +42,7 @@ public class SingleCaseAdditionalPropertiesController : LoggedInControllerBase
         UserEntityModel user,
         bool requireWorker = false)
     {
-        var caseEntity = await Db.Cases
+        var caseEntity = await Db.WithinTenancy_Cases
             .Include(c => c.Clients)
             .Include(c => c.Workers)
             .FirstOrDefaultAsync(c => c.Id == caseId);

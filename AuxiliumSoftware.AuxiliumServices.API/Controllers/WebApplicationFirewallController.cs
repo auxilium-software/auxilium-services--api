@@ -45,53 +45,53 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             var now = DateTime.UtcNow;
             var since = now.AddHours(-Math.Abs(hoursBack ?? 24));
 
-            var totalLoginAttempts = await this.Db.Log_LoginAttempts
+            var totalLoginAttempts = await this.Db.WithinTenancy_Log_LoginAttempts
                 .Where(l => l.CreatedAtUtc >= since)
                 .CountAsync();
 
-            var failedLoginAttempts = await this.Db.Log_LoginAttempts
+            var failedLoginAttempts = await this.Db.WithinTenancy_Log_LoginAttempts
                 .Where(l => l.CreatedAtUtc >= since && !l.WasLoginSuccessful)
                 .CountAsync();
 
-            var successfulLoginAttempts = await this.Db.Log_LoginAttempts
+            var successfulLoginAttempts = await this.Db.WithinTenancy_Log_LoginAttempts
                 .Where(l => l.CreatedAtUtc >= since && l.WasLoginSuccessful)
                 .CountAsync();
 
-            var blockedIpAttempts = await this.Db.Log_LoginAttempts
+            var blockedIpAttempts = await this.Db.WithinTenancy_Log_LoginAttempts
                 .Where(l => l.CreatedAtUtc >= since && l.WasBlockedByWaf)
                 .CountAsync();
 
-            var currentlyBlockedIps = await this.Db.System_Waf_IpBlacklist
+            var currentlyBlockedIps = await this.Db.WithinTenancy_System_Waf_IpBlacklist
                 .Where(b => b.UnblacklistedAtUtc == null && (b.ExpiresAtUtc == null || b.ExpiresAtUtc > now))
                 .CountAsync();
 
-            var permanentlyBannedIps = await this.Db.System_Waf_IpBlacklist
+            var permanentlyBannedIps = await this.Db.WithinTenancy_System_Waf_IpBlacklist
                 .Where(b => b.UnblacklistedAtUtc == null && b.IsPermanent)
                 .CountAsync();
 
-            var temporarilyBlockedIps = await this.Db.System_Waf_IpBlacklist
+            var temporarilyBlockedIps = await this.Db.WithinTenancy_System_Waf_IpBlacklist
                 .Where(b => b.UnblacklistedAtUtc == null && !b.IsPermanent && b.ExpiresAtUtc > now)
                 .CountAsync();
 
-            var lockedOutUsers = await this.Db.System_Waf_UserBlacklist
+            var lockedOutUsers = await this.Db.WithinTenancy_System_Waf_UserBlacklist
                 .Where(b => b.UnblacklistedAtUtc == null && (b.ExpiresAtUtc == null || b.ExpiresAtUtc > now))
                 .Select(b => b.UserId)
                 .Distinct()
                 .CountAsync();
 
-            var distinctIpsWithFailures = await this.Db.Log_LoginAttempts
+            var distinctIpsWithFailures = await this.Db.WithinTenancy_Log_LoginAttempts
                 .Where(l => l.CreatedAtUtc >= since && !l.WasLoginSuccessful)
                 .Select(l => l.ClientIpAddress)
                 .Distinct()
                 .CountAsync();
 
-            var distinctUsersTargeted = await this.Db.Log_LoginAttempts
+            var distinctUsersTargeted = await this.Db.WithinTenancy_Log_LoginAttempts
                 .Where(l => l.CreatedAtUtc >= since && !l.WasLoginSuccessful && l.TargetUserId != null)
                 .Select(l => l.TargetUserId)
                 .Distinct()
                 .CountAsync();
 
-            var loginAttemptsRaw = await this.Db.Log_LoginAttempts
+            var loginAttemptsRaw = await this.Db.WithinTenancy_Log_LoginAttempts
                 .Where(l => l.CreatedAtUtc >= since)
                 .Select(l => new { l.CreatedAtUtc, l.WasLoginSuccessful, l.WasBlockedByWaf })
                 .ToListAsync();
@@ -108,7 +108,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 .OrderBy(x => x.Hour)
                 .ToList();
 
-            var failedAttemptsRaw = await this.Db.Log_LoginAttempts
+            var failedAttemptsRaw = await this.Db.WithinTenancy_Log_LoginAttempts
                 .Where(l => l.CreatedAtUtc >= since && !l.WasLoginSuccessful)
                 .Select(l => new { l.ClientIpAddress, l.TargetUserId, l.CreatedAtUtc })
                 .ToListAsync();
@@ -127,7 +127,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 .ToList();
 
             var offendingIpAddresses = topOffendingIps.Select(x => x.IpAddress).ToList();
-            var blockedIpSet = await this.Db.System_Waf_IpBlacklist
+            var blockedIpSet = await this.Db.WithinTenancy_System_Waf_IpBlacklist
                 .Where(b => b.UnblacklistedAtUtc == null && (b.ExpiresAtUtc == null || b.ExpiresAtUtc > now) && offendingIpAddresses.Contains(b.IpAddress))
                 .Select(b => b.IpAddress)
                 .ToListAsync();
@@ -137,7 +137,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 offender.IsCurrentlyBlocked = blockedIpSet.Contains(offender.IpAddress);
             }
 
-            var targetedAttemptsRaw = await this.Db.Log_LoginAttempts
+            var targetedAttemptsRaw = await this.Db.WithinTenancy_Log_LoginAttempts
                 .Where(l => l.CreatedAtUtc >= since && !l.WasLoginSuccessful && l.TargetUserId != null)
                 .Select(l => new { l.TargetUserId, l.ClientIpAddress, l.CreatedAtUtc })
                 .ToListAsync();
@@ -156,12 +156,12 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 .ToList();
 
             var targetedUserIds = topTargetedUsers.Select(x => x.UserId).ToList();
-            var userDetails = await this.Db.Users
+            var userDetails = await this.Db.WithinTenancy_Users
                 .Where(u => targetedUserIds.Contains(u.Id))
                 .Select(u => new { u.Id, u.EmailAddress, u.FullName })
                 .ToDictionaryAsync(u => u.Id);
 
-            var lockedUserIds = await this.Db.System_Waf_UserBlacklist
+            var lockedUserIds = await this.Db.WithinTenancy_System_Waf_UserBlacklist
                 .Where(b => targetedUserIds.Contains(b.UserId) && b.UnblacklistedAtUtc == null && (b.ExpiresAtUtc == null || b.ExpiresAtUtc > now))
                 .Select(b => b.UserId)
                 .Distinct()
@@ -218,7 +218,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             var adminError = await this.RequireAdminAsync();
             if (adminError != null) return adminError;
 
-            var query = this.Db.Log_LoginAttempts.AsQueryable();
+            var query = this.Db.WithinTenancy_Log_LoginAttempts.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(ipAddress))
                 query = query.Where(l => l.ClientIpAddress == ipAddress);
@@ -290,7 +290,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             if (adminError != null) return adminError;
 
             var now = DateTime.UtcNow;
-            var query = this.Db.System_Waf_IpBlacklist.AsQueryable();
+            var query = this.Db.WithinTenancy_System_Waf_IpBlacklist.AsQueryable();
 
             if (!includeExpired)
             {
@@ -348,7 +348,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             var normalizedIp = Waf.NormaliseIpAddress(request.IpAddress);
 
             // Check if already blocked
-            var existingBlock = await this.Db.System_Waf_IpBlacklist
+            var existingBlock = await this.Db.WithinTenancy_System_Waf_IpBlacklist
                 .Where(b => b.IpAddress == request.IpAddress && b.UnblacklistedAtUtc == null && (b.ExpiresAtUtc == null || b.ExpiresAtUtc > now))
                 .FirstOrDefaultAsync();
 
@@ -371,7 +371,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             );
 
             // Fetch the created block to return
-            var block = await this.Db.System_Waf_IpBlacklist
+            var block = await this.Db.WithinTenancy_System_Waf_IpBlacklist
                 .Where(b => b.IpAddress == request.IpAddress && b.UnblacklistedAtUtc == null)
                 .OrderByDescending(b => b.CreatedAtUtc)
                 .FirstAsync();
@@ -402,7 +402,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             var now = DateTime.UtcNow;
             var normalizedIp = Waf.NormaliseIpAddress(ipAddress);
 
-            var block = await this.Db.System_Waf_IpBlacklist
+            var block = await this.Db.WithinTenancy_System_Waf_IpBlacklist
                 .Where(b => b.IpAddress == ipAddress)
                 .OrderByDescending(b => b.CreatedAtUtc)
                 .FirstOrDefaultAsync();
@@ -412,7 +412,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 return StatusCode(StatusCodes.Status404NotFound, new { message = $"No block record found for IP: {ipAddress}" });
             }
 
-            var recentAttempts = await this.Db.Log_LoginAttempts
+            var recentAttempts = await this.Db.WithinTenancy_Log_LoginAttempts
                 .Where(l => l.ClientIpAddress == normalizedIp)
                 .OrderByDescending(l => l.CreatedAtUtc)
                 .Take(50)
@@ -429,7 +429,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 })
                 .ToListAsync();
 
-            var blockHistory = await this.Db.System_Waf_IpBlacklist
+            var blockHistory = await this.Db.WithinTenancy_System_Waf_IpBlacklist
                 .Where(b => b.IpAddress == ipAddress)
                 .OrderByDescending(b => b.CreatedAtUtc)
                 .Select(b => new BlacklistHistoryItem
@@ -517,7 +517,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
 
             var now = DateTime.UtcNow;
 
-            var query = this.Db.System_Waf_UserBlacklist.AsQueryable();
+            var query = this.Db.WithinTenancy_System_Waf_UserBlacklist.AsQueryable();
 
             if (!includeExpired)
             {
@@ -542,12 +542,12 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
 
             var userIds = userBlocks.Select(b => b.UserId).ToList();
 
-            var userDetails = await this.Db.Users
+            var userDetails = await this.Db.WithinTenancy_Users
                 .Where(u => userIds.Contains(u.Id))
                 .Select(u => new { u.Id, u.EmailAddress, u.FullName })
                 .ToDictionaryAsync(u => u.Id);
 
-            var recentAttemptCounts = await this.Db.Log_LoginAttempts
+            var recentAttemptCounts = await this.Db.WithinTenancy_Log_LoginAttempts
                 .Where(l => l.TargetUserId != null && userIds.Contains(l.TargetUserId.Value) && !l.WasLoginSuccessful)
                 .Where(l => l.CreatedAtUtc >= now.AddHours(-24))
                 .GroupBy(l => l.TargetUserId)
@@ -601,7 +601,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 return StatusCode(StatusCodes.Status400BadRequest, new { message = "Reason is required" });
             }
 
-            var targetUser = await this.Db.Users.FindAsync(userId);
+            var targetUser = await this.Db.WithinTenancy_Users.FindAsync(userId);
             if (targetUser == null)
             {
                 return StatusCode(StatusCodes.Status404NotFound, new { message = "User not found" });
@@ -610,7 +610,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             var now = DateTime.UtcNow;
 
             // Check if already locked
-            var existingLock = await this.Db.System_Waf_UserBlacklist
+            var existingLock = await this.Db.WithinTenancy_System_Waf_UserBlacklist
                 .Where(b => b.UserId == userId && b.UnblacklistedAtUtc == null && (b.ExpiresAtUtc == null || b.ExpiresAtUtc > now))
                 .FirstOrDefaultAsync();
 
@@ -626,7 +626,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 permanent: request.IsPermanent
             );
 
-            var block = await this.Db.System_Waf_UserBlacklist
+            var block = await this.Db.WithinTenancy_System_Waf_UserBlacklist
                 .Where(b => b.UserId == userId && b.UnblacklistedAtUtc == null)
                 .OrderByDescending(b => b.CreatedAtUtc)
                 .FirstAsync();
@@ -652,7 +652,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             var adminError = await this.RequireAdminAsync();
             if (adminError != null) return adminError;
 
-            var targetUser = await this.Db.Users.FindAsync(userId);
+            var targetUser = await this.Db.WithinTenancy_Users.FindAsync(userId);
             if (targetUser == null)
             {
                 return StatusCode(StatusCodes.Status404NotFound, new { message = "User not found" });
@@ -685,7 +685,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             if (adminError != null) return adminError;
 
             var now = DateTime.UtcNow;
-            var query = this.Db.System_Waf_IpWhitelist.AsQueryable();
+            var query = this.Db.WithinTenancy_System_Waf_IpWhitelist.AsQueryable();
 
             if (!includeExpired)
             {
@@ -749,7 +749,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             var normalizedIp = Waf.NormaliseIpAddress(parsedIpAddress);
 
             // Check if already whitelisted
-            var existingEntry = await this.Db.System_Waf_IpWhitelist
+            var existingEntry = await this.Db.WithinTenancy_System_Waf_IpWhitelist
                 .Where(w => w.IpAddress == parsedIpAddress && w.UnwhitelistedAtUtc == null && (w.ExpiresAtUtc == null || w.ExpiresAtUtc > now))
                 .FirstOrDefaultAsync();
 
@@ -765,7 +765,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 permanent: request.IsPermanent
             );
 
-            var entry = await this.Db.System_Waf_IpWhitelist
+            var entry = await this.Db.WithinTenancy_System_Waf_IpWhitelist
                 .Where(w => w.IpAddress == parsedIpAddress && w.UnwhitelistedAtUtc == null)
                 .OrderByDescending(w => w.CreatedAtUtc)
                 .FirstAsync();
@@ -828,7 +828,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             if (adminError != null) return adminError;
 
             var now = DateTime.UtcNow;
-            var query = this.Db.System_Waf_UserWhitelist.AsQueryable();
+            var query = this.Db.WithinTenancy_System_Waf_UserWhitelist.AsQueryable();
 
             if (!includeExpired)
             {
@@ -847,7 +847,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
 
             var userIds = userWhitelists.Select(w => w.UserId).ToList();
 
-            var userDetails = await this.Db.Users
+            var userDetails = await this.Db.WithinTenancy_Users
                 .Where(u => userIds.Contains(u.Id))
                 .Select(u => new { u.Id, u.EmailAddress, u.FullName })
                 .ToDictionaryAsync(u => u.Id);
@@ -898,7 +898,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 return StatusCode(StatusCodes.Status400BadRequest, new { message = "Reason is required" });
             }
 
-            var targetUser = await this.Db.Users.FindAsync(userId);
+            var targetUser = await this.Db.WithinTenancy_Users.FindAsync(userId);
             if (targetUser == null)
             {
                 return StatusCode(StatusCodes.Status404NotFound, new { message = "User not found" });
@@ -907,7 +907,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             var now = DateTime.UtcNow;
 
             // Check if already whitelisted
-            var existingEntry = await this.Db.System_Waf_UserWhitelist
+            var existingEntry = await this.Db.WithinTenancy_System_Waf_UserWhitelist
                 .Where(w => w.UserId == userId && w.UnwhitelistedAtUtc == null && (w.ExpiresAtUtc == null || w.ExpiresAtUtc > now))
                 .FirstOrDefaultAsync();
 
@@ -923,7 +923,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 permanent: request.IsPermanent
             );
 
-            var entry = await this.Db.System_Waf_UserWhitelist
+            var entry = await this.Db.WithinTenancy_System_Waf_UserWhitelist
                 .Where(w => w.UserId == userId && w.UnwhitelistedAtUtc == null)
                 .OrderByDescending(w => w.CreatedAtUtc)
                 .FirstAsync();
@@ -951,7 +951,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             var adminError = await this.RequireAdminAsync();
             if (adminError != null) return adminError;
 
-            var targetUser = await this.Db.Users.FindAsync(userId);
+            var targetUser = await this.Db.WithinTenancy_Users.FindAsync(userId);
             if (targetUser == null)
             {
                 return StatusCode(StatusCodes.Status404NotFound, new { message = "User not found" });

@@ -222,7 +222,7 @@ public class SingleUserAdditionalPropertiesController : LoggedInControllerBase
             existingProp.LastUpdatedAtUtc = DateTime.UtcNow;
             existingProp.LastUpdatedByUserId = user.Id;
 
-            var userEntity = await Db.Users.FindAsync(userId);
+            var userEntity = await Db.WithinTenancy_Users.FindAsync(userId);
             if (userEntity != null)
             {
                 userEntity.LastUpdatedAtUtc = DateTime.UtcNow;
