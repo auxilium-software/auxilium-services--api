@@ -68,6 +68,7 @@ builder.Services.AddControllers()
         // options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
 
         options.JsonSerializerOptions.Converters.Add(new IpAddressJsonConverter());
+        options.JsonSerializerOptions.Converters.Add(new JsonPropertyNameEnumConverterFactory());
 
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     });
