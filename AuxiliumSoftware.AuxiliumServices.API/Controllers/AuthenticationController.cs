@@ -111,9 +111,9 @@ public class AuthenticationController : ControllerBase
                 }
 
                 // generate UUIDs
-                var userId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.User);
-                var caseId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.Case);
-                var caseClientId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.Case_Client);
+                var userId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.WithinTenancy_User);
+                var caseId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.WithinTenancy_Case);
+                var caseClientId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.WithinTenancy_Case_Client);
 
                 // hash password
                 var normalised = this._passwordService.NormalisePassword(request.RawPassword, request.PasswordSha512);
@@ -274,7 +274,7 @@ public class AuthenticationController : ControllerBase
 
                 _db.WithinTenancy_UserPasswordSetTokens.Add(new PasswordSetTokenEntityModel
                 {
-                    Id = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.User_PasswordSetToken),
+                    Id = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.WithinTenancy_User_PasswordSetToken),
                     UserId = user.Id,
                     TokenHash = tokenHash,
                     Reason = PasswordSetTokenReasonEnum.Auxilium1BCryptMigration,
@@ -746,7 +746,7 @@ public class AuthenticationController : ControllerBase
         _db.WithinTenancy_UserRefreshTokens.RemoveRange(expiredTokens);
 
         // store the new refresh token
-        var refreshTokenId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.User_RefreshToken);
+        var refreshTokenId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.WithinTenancy_User_RefreshToken);
         var tokenHash = HashingUtilities.SHA256Hash(refreshToken);
         var expiresAtTime = DateTime.UtcNow.AddDays(_configuration.JWT.RefreshTokenExpirationInDays);
 

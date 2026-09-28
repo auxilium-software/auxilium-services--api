@@ -345,7 +345,7 @@ public class UserController : LoggedInControllerBase
                 });
             }
 
-            var userId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.User);
+            var userId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.WithinTenancy_User);
 
             var newUser = new UserEntityModel
             {
