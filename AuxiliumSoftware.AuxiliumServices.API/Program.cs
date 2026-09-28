@@ -15,6 +15,8 @@ using AuxiliumSoftware.AuxiliumServices.Common.Metrics.Sinks;
 using AuxiliumSoftware.AuxiliumServices.Common.Metrics.Workers;
 using AuxiliumSoftware.AuxiliumServices.Common.Services;
 using AuxiliumSoftware.AuxiliumServices.Common.Services.Implementations;
+using AuxiliumSoftware.AuxiliumServices.Common.Tenancy;
+using AuxiliumSoftware.AuxiliumServices.Common.Tenancy.TenantLookup;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -199,6 +201,17 @@ builder.Logging.AddFilter(
 
 
 
+/*
+ * IMPORTANT!
+ * This bit handles tenancy stuff - don't remove!
+ */
+builder.Services.AddScoped<ITenantLookup, TenantLookup>();
+builder.Services.AddScoped<TenantContextAccessor>();
+builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContextAccessor>());
+builder.Services.AddScoped<ITenantContextSetter>(sp => sp.GetRequiredService<TenantContextAccessor>());
+
+
+
 var mariaDbHost = builder.Configuration["Databases:MariaDB:Host"]           ?? throw new InvalidOperationException("MariaDB Host not found");
 var mariaDbPort = builder.Configuration["Databases:MariaDB:Port"]           ?? throw new InvalidOperationException("MariaDB Port not found");
 var mariaDbUsername = builder.Configuration["Databases:MariaDB:Username"]   ?? throw new InvalidOperationException("MariaDB Username not found");
@@ -298,6 +311,8 @@ if (builder.Configuration.GetValue<bool>("API:UseHttpsRedirection"))
 }
 
 app.UseCors();
+
+app.UseMiddleware<TenantResolutionMiddleware>();
 
 app.UseMiddleware<WafIpMiddleware>();
 app.UseMiddleware<HttpMetricsMiddleware>();
