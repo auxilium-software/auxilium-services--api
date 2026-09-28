@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace AuxiliumSoftware.AuxiliumServices.API.Models.CalendarEventCategory
+namespace AuxiliumSoftware.AuxiliumServices.API.Models.CalendarEvent
 {
     public class CalendarEventCategoryColourUpdateRequestModel
     {
