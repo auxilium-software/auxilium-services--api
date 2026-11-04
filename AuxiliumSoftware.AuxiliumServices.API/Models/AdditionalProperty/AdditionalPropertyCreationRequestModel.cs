@@ -18,5 +18,9 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Models.AdditionalProperty
         [Required]
         [JsonPropertyName("contentType")]
         public string? ContentType { get; set; }
+
+
+        [JsonPropertyName("groupId")]
+        public Guid? GroupId { get; set; }
     }
 }

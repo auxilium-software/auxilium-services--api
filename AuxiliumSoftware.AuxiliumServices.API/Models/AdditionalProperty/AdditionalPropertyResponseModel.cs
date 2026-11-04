@@ -27,10 +27,21 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Models.AdditionalProperty
 
 
 
+        [JsonPropertyName("groupId")]
+        public Guid? GroupId { get; set; }
+
+        [JsonPropertyName("groupDisplayName")]
+        public string? GroupDisplayName { get; set; }
+
+
+
+
+
+
         [JsonPropertyName("dataEnumeratorId")]
         public Guid? DataEnumeratorId { get; set; }
 
-        [JsonPropertyName("displayName")]
+        [JsonPropertyName("displayValue")]
         public string? DisplayValue { get; set; }
 
         [JsonPropertyName("enumDisplayName")]
