@@ -135,7 +135,8 @@ public class SingleCaseAdditionalPropertiesController : LoggedInControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<AdditionalPropertyCreationResponseModel>> CreateProperty(
         Guid caseId,
-        [FromBody] AdditionalPropertyCreationRequestModel request)
+        [FromBody] AdditionalPropertyCreationRequestModel request
+    )
     {
         try
         {
@@ -147,17 +148,29 @@ public class SingleCaseAdditionalPropertiesController : LoggedInControllerBase
 
             var effectiveName = request.OriginalName;
 
-            if (string.IsNullOrWhiteSpace(effectiveName)
-                && request.ContentType == Common.Constants.DataEnumeratorReferenceContentType)
+            if (
+                string.IsNullOrWhiteSpace(effectiveName)
+                && request.ContentType == Common.Constants.DataEnumeratorReferenceContentType
+            )
             {
                 if (!Guid.TryParse(request.Content, out var valueId))
+                {
                     return StatusCode(StatusCodes.Status400BadRequest,
-                        new FailureResponseModel { Detail = "Invalid enumerator value reference" });
+                        new FailureResponseModel {
+                            Detail = "Invalid enumerator value reference"
+                        }
+                    );
+                }
 
                 var resolved = await _dataEnumeratorService.ResolveValueDisplaysAsync([valueId], null);
                 if (!resolved.TryGetValue(valueId, out var r))
+                {
                     return StatusCode(StatusCodes.Status400BadRequest,
-                        new FailureResponseModel { Detail = "Enumerator value not found" });
+                        new FailureResponseModel {
+                            Detail = "Enumerator value not found"
+                        }
+                    );
+                }
 
                 effectiveName = r.EnumCanonicalName;
             }
@@ -165,23 +178,27 @@ public class SingleCaseAdditionalPropertiesController : LoggedInControllerBase
             if (string.IsNullOrWhiteSpace(effectiveName))
             {
                 return StatusCode(StatusCodes.Status400BadRequest,
-                    new FailureResponseModel { Detail = "Property name is required" });
+                    new FailureResponseModel {
+                        Detail = "Property name is required"
+                    }
+                );
             }
 
             var newId = await _caseDocService.SaveAdditionalPropertyAsync(
-                user!,
-                caseId,
-                effectiveName,
-                request.Content,
-                request.ContentType
+                currentUser: user!,
+                caseId: caseId,
+                groupId: request.GroupId,
+                additionalPropertyDisplayName: effectiveName,
+                additionalPropertyContent: request.Content,
+                contentType: request.ContentType
             );
 
             Logger.LogInformation(
                 "Created property {PropertyId} ({Name}) for case {CaseId} by {CurrentUserId}",
-                newId, effectiveName, caseId, user!.Id);
+                newId, effectiveName, caseId, user!.Id
+            );
 
-            return StatusCode(StatusCodes.Status201Created,
-                new AdditionalPropertyCreationResponseModel { Id = newId });
+            return StatusCode(StatusCodes.Status201Created, new AdditionalPropertyCreationResponseModel { Id = newId });
         }
         catch (Exception ex)
         {
