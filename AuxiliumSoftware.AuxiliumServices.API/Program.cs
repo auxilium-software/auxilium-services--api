@@ -169,6 +169,11 @@ builder.Services.AddScoped<ICaseDocumentService, CaseDocumentService>();
 builder.Services.AddScoped<IUserDocumentService, UserDocumentService>();
 builder.Services.AddScoped<IFileDocumentService, FileDocumentService>();
 builder.Services.AddScoped<IMessageDocumentService, MessageDocumentService>();
+builder.Services.AddScoped<ICaseAdditionalPropertyGroupService, CaseAdditionalPropertyGroupService>();
+builder.Services.AddScoped<IUserAdditionalPropertyGroupService, UserAdditionalPropertyGroupService>();
+
+builder.Services.AddScoped<ICaseMergeService, CaseMergeService>();
+builder.Services.AddScoped<IUserMergeService, UserMergeService>();
 
 builder.Services.AddScoped<IWebApplicationFirewallService, WebApplicationFirewallService>();
 builder.Services.AddScoped<ITotpService, TotpService>();
