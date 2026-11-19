@@ -1,4 +1,5 @@
 ﻿using AuxiliumSoftware.AuxiliumServices.API.Common.ControllerBases;
+using AuxiliumSoftware.AuxiliumServices.API.Mappers;
 using AuxiliumSoftware.AuxiliumServices.API.Models;
 using AuxiliumSoftware.AuxiliumServices.API.Models.AdditionalProperty;
 using AuxiliumSoftware.AuxiliumServices.Common.EntityFramework;
@@ -40,7 +41,8 @@ public class SingleCaseAdditionalPropertiesController : LoggedInControllerBase
     private async Task<(CaseEntityModel? caseEntity, ActionResult? error)> GetCaseWithAccessCheckAsync(
         Guid caseId,
         UserEntityModel user,
-        bool requireWorker = false)
+        bool requireWorker = false
+    )
     {
         var caseEntity = await Db.WithinTenancy_Cases
             .Include(c => c.Clients)
@@ -85,7 +87,8 @@ public class SingleCaseAdditionalPropertiesController : LoggedInControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AdditionalPropertyResponseModel>> GetProperty(
         Guid caseId,
-        Guid propertyId)
+        Guid propertyId
+    )
     {
         var (user, error) = await GetCurrentUserAsync();
         if (error != null) return error;
@@ -108,14 +111,17 @@ public class SingleCaseAdditionalPropertiesController : LoggedInControllerBase
             Content = property.Content,
             ContentType = property.ContentType,
             CreatedAt = property.CreatedAtUtc,
-            LastUpdatedAt = property.LastUpdatedAtUtc
+            LastUpdatedAt = property.LastUpdatedAtUtc,
+            GroupId = property.GroupId,
+            GroupDisplayName = AdditionalPropertyGroupMapper.ResolveDisplayName(property.Group, user!.LanguagePreference),
         };
 
-        if (property.ContentType == Common.Constants.DataEnumeratorReferenceContentType
-            && Guid.TryParse(property.Content, out var valueId))
+        if (
+            property.ContentType == Common.Constants.DataEnumeratorReferenceContentType
+            && Guid.TryParse(property.Content, out var valueId)
+        )
         {
-            var resolved = await _dataEnumeratorService.ResolveValueDisplaysAsync(
-                [valueId], user!.LanguagePreference);
+            var resolved = await _dataEnumeratorService.ResolveValueDisplaysAsync([valueId], user!.LanguagePreference);
             if (resolved.TryGetValue(valueId, out var r))
             {
                 response.DataEnumeratorId = r.EnumTypeId;
@@ -156,7 +162,8 @@ public class SingleCaseAdditionalPropertiesController : LoggedInControllerBase
                 if (!Guid.TryParse(request.Content, out var valueId))
                 {
                     return StatusCode(StatusCodes.Status400BadRequest,
-                        new FailureResponseModel {
+                        new FailureResponseModel
+                        {
                             Detail = "Invalid enumerator value reference"
                         }
                     );
@@ -166,7 +173,8 @@ public class SingleCaseAdditionalPropertiesController : LoggedInControllerBase
                 if (!resolved.TryGetValue(valueId, out var r))
                 {
                     return StatusCode(StatusCodes.Status400BadRequest,
-                        new FailureResponseModel {
+                        new FailureResponseModel
+                        {
                             Detail = "Enumerator value not found"
                         }
                     );
@@ -178,7 +186,8 @@ public class SingleCaseAdditionalPropertiesController : LoggedInControllerBase
             if (string.IsNullOrWhiteSpace(effectiveName))
             {
                 return StatusCode(StatusCodes.Status400BadRequest,
-                    new FailureResponseModel {
+                    new FailureResponseModel
+                    {
                         Detail = "Property name is required"
                     }
                 );
@@ -199,6 +208,10 @@ public class SingleCaseAdditionalPropertiesController : LoggedInControllerBase
             );
 
             return StatusCode(StatusCodes.Status201Created, new AdditionalPropertyCreationResponseModel { Id = newId });
+        }
+        catch (KeyNotFoundException)
+        {
+            return StatusCode(StatusCodes.Status400BadRequest, new FailureResponseModel { Detail = "Group not found" });
         }
         catch (Exception ex)
         {
@@ -230,11 +243,17 @@ public class SingleCaseAdditionalPropertiesController : LoggedInControllerBase
             if (caseError != null) return caseError;
 
             await _caseDocService.UpdateAdditionalPropertyAsync(
-                caseId, propertyId, request.Content, request.ContentType, user!.Id);
+                caseId,
+                propertyId,
+                request.Content,
+                request.ContentType,
+                user!.Id
+            );
 
             Logger.LogInformation(
                 "Updated property {PropertyId} for case {CaseId} by {CurrentUserId}",
-                propertyId, caseId, user.Id);
+                propertyId, caseId, user.Id
+            );
 
             return StatusCode(StatusCodes.Status200OK, new SuccessResponseModel());
         }
@@ -253,6 +272,57 @@ public class SingleCaseAdditionalPropertiesController : LoggedInControllerBase
         }
     }
 
+    [HttpPatch("{propertyId:guid}/group")]
+    [ProducesResponseType(typeof(SuccessResponseModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<SuccessResponseModel>> MovePropertyToGroup(
+        Guid caseId,
+        Guid propertyId,
+        [FromBody] AdditionalPropertyMoveToGroupRequestModel request
+    )
+    {
+        try
+        {
+            var (user, error) = await GetCurrentUserAsync();
+            if (error != null) return error;
+
+            var (caseEntity, caseError) = await GetCaseWithAccessCheckAsync(caseId, user!, requireWorker: true);
+            if (caseError != null) return caseError;
+
+            var propertyExists = await Db.WithinTenancy_CaseAdditionalProperties
+                .AnyAsync(p => p.CaseId == caseId && p.Id == propertyId);
+            if (!propertyExists)
+            {
+                return StatusCode(StatusCodes.Status404NotFound, new FailureResponseModel { Detail = "Property not found" });
+            }
+
+            await _caseDocService.MoveAdditionalPropertyToGroupAsync(caseId, propertyId, request.GroupId, user!.Id);
+
+            Logger.LogInformation(
+                "Moved property {PropertyId} for case {CaseId} to group {GroupId} by {CurrentUserId}",
+                propertyId, caseId, request.GroupId, user.Id
+            );
+
+            return StatusCode(StatusCodes.Status200OK, new SuccessResponseModel());
+        }
+        catch (KeyNotFoundException)
+        {
+            return StatusCode(StatusCodes.Status400BadRequest, new FailureResponseModel { Detail = "Group not found" });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to move property {PropertyId} for case {CaseId} to group {GroupId}",
+                propertyId, caseId, request.GroupId);
+            return StatusCode(StatusCodes.Status500InternalServerError, new FailureResponseModel
+            {
+                Detail = "Failed to move property"
+            });
+        }
+    }
+
     [HttpDelete("{propertyId:guid}")]
     [ProducesResponseType(typeof(SuccessResponseModel), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -260,7 +330,8 @@ public class SingleCaseAdditionalPropertiesController : LoggedInControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<SuccessResponseModel>> DeleteProperty(
         Guid caseId,
-        Guid propertyId)
+        Guid propertyId
+    )
     {
         try
         {
@@ -274,7 +345,8 @@ public class SingleCaseAdditionalPropertiesController : LoggedInControllerBase
 
             Logger.LogInformation(
                 "Deleted property {PropertyId} from case {CaseId} by {CurrentUserId}",
-                propertyId, caseId, user.Id);
+                propertyId, caseId, user.Id
+            );
 
             return StatusCode(StatusCodes.Status200OK, new SuccessResponseModel());
         }

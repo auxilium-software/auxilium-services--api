@@ -2,6 +2,7 @@
 using AuxiliumSoftware.AuxiliumServices.API.Models;
 using AuxiliumSoftware.AuxiliumServices.API.Models.Me;
 using AuxiliumSoftware.AuxiliumServices.API.Models.User;
+using AuxiliumSoftware.AuxiliumServices.API.Mappers;
 using AuxiliumSoftware.AuxiliumServices.Common.Configuration;
 using AuxiliumSoftware.AuxiliumServices.Common.DataTransferObjects;
 using AuxiliumSoftware.AuxiliumServices.Common.EntityFramework;
@@ -63,21 +64,7 @@ public class MeController : LoggedInControllerBase
             }
 
             // get additional properties
-            var additionalProperties = userDoc.AdditionalProperties?
-                .ToDictionary(
-                    p => p.Id.ToString(),
-                    p => new AdditionalPropertySubStructureDTO
-                    {
-                        Id = p.Id,
-                        CreatedAt = p.CreatedAtUtc,
-                        CreatedBy = p.CreatedByUserId,
-                        UpdatedAt = p.LastUpdatedAtUtc,
-                        LastUpdatedBy = p.LastUpdatedByUserId,
-                        DisplayName = p.DisplayName,
-                        Content = p.Content,
-                        ContentType = p.ContentType
-                    }
-                ) ?? new Dictionary<string, AdditionalPropertySubStructureDTO>();
+            var additionalProperties = AdditionalPropertyMapper.ToSubStructureDictionary(userDoc.AdditionalProperties);
 
             // build response
             var response = new UserResponseModel
@@ -295,3 +282,4 @@ public class MeController : LoggedInControllerBase
         }
     }
 }
+

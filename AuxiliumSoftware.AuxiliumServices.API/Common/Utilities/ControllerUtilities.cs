@@ -262,7 +262,8 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
                             LastUpdatedBy = p.LastUpdatedByUserId,
                             DisplayName = p.DisplayName,
                             Content = p.Content,
-                            ContentType = p.ContentType
+                            ContentType = p.ContentType,
+                            GroupId = p.GroupId,
                         }
                     ) ?? new Dictionary<string, AdditionalPropertySubStructureDTO>(),
             };
@@ -398,7 +399,8 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
             foreach (var p in properties.Values)
             {
                 if (p.ContentType == Common.Constants.DataEnumeratorReferenceContentType
-                    && Guid.TryParse(p.Content, out var vid))
+                    && Guid.TryParse(p.Content, out var vid)
+                )
                 {
                     valueIds.Add(vid);
                 }
