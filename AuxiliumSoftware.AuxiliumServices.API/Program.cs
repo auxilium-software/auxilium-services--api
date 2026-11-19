@@ -312,9 +312,10 @@ if (builder.Configuration.GetValue<bool>("API:UseHttpsRedirection"))
 
 app.UseCors();
 
+app.UseMiddleware<WafIpMiddleware>();
+
 app.UseMiddleware<TenantResolutionMiddleware>();
 
-app.UseMiddleware<WafIpMiddleware>();
 app.UseMiddleware<HttpMetricsMiddleware>();
 
 app.UseAuthentication();
