@@ -67,26 +67,26 @@ public class UserController : LoggedInControllerBase
             if (user!.IsAdministrator)
             {
                 // admins see all users
-                query = Db.WithinTenancy_Users.Include(u => u.AdditionalProperties);
+                query = Db.Users.Include(u => u.AdditionalProperties);
             }
             else
             {
                 // non-admins see users they share cases with
-                query = Db.WithinTenancy_Users
+                query = Db.Users
                     .Include(u => u.AdditionalProperties)
                     .Where(u =>
                         // users they're a client with
-                        Db.WithinTenancy_CaseClients.Any(
+                        Db.CaseClients.Any(
                             cc => cc.UserId == user.Id
-                            && Db.WithinTenancy_CaseClients.Any(
+                            && Db.CaseClients.Any(
                                 cc2 => cc2.CaseId == cc.CaseId
                                 && cc2.UserId == u.Id
                             )
                         )
                         // -OR- users they're a worker with
-                        || Db.WithinTenancy_CaseWorkers.Any(
+                        || Db.CaseWorkers.Any(
                             cw => cw.UserId == user.Id
-                            && Db.WithinTenancy_CaseWorkers.Any(
+                            && Db.CaseWorkers.Any(
                                 cw2 => cw2.CaseId == cw.CaseId
                                 && cw2.UserId == u.Id
                             )
@@ -165,15 +165,15 @@ public class UserController : LoggedInControllerBase
             if (adminError != null) return adminError;
 
             var now = DateTime.UtcNow;
-            var totalUsers = await Db.WithinTenancy_Users.CountAsync();
+            var totalUsers = await Db.Users.CountAsync();
 
             // calculate growth percentage from last month
             var startOfThisMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             var startOfLastMonth = startOfThisMonth.AddMonths(-1);
 
-            var usersCreatedThisMonth = await Db.WithinTenancy_Users
+            var usersCreatedThisMonth = await Db.Users
                 .CountAsync(u => u.CreatedAtUtc >= startOfThisMonth);
-            var usersCreatedLastMonth = await Db.WithinTenancy_Users
+            var usersCreatedLastMonth = await Db.Users
                 .CountAsync(u => u.CreatedAtUtc >= startOfLastMonth && u.CreatedAtUtc < startOfThisMonth);
 
             double growthPercentage = 0;
@@ -191,9 +191,9 @@ public class UserController : LoggedInControllerBase
 
 
             // additional stats
-            var adminCount = await Db.WithinTenancy_Users.CountAsync(u => u.IsAdministrator);
-            var caseWorkerCount = await Db.WithinTenancy_Users.CountAsync(u => u.IsCaseWorker);
-            var caseWorkerManagerCount = await Db.WithinTenancy_Users.CountAsync(u => u.IsCaseWorkerManager);
+            var adminCount = await Db.Users.CountAsync(u => u.IsAdministrator);
+            var caseWorkerCount = await Db.Users.CountAsync(u => u.IsCaseWorker);
+            var caseWorkerManagerCount = await Db.Users.CountAsync(u => u.IsCaseWorkerManager);
             var regularUserCount = totalUsers - adminCount - caseWorkerCount;
 
             var response = new UserStatisticsResponseModel
@@ -258,7 +258,7 @@ public class UserController : LoggedInControllerBase
             if (totpError != null) return totpError;
 
             // check for existing email
-            var emailExists = await Db.WithinTenancy_Users
+            var emailExists = await Db.Users
                 .AnyAsync(u => u.EmailAddress == request.EmailAddress);
 
             if (emailExists)
@@ -269,7 +269,7 @@ public class UserController : LoggedInControllerBase
                 });
             }
 
-            var userId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.WithinTenancy_User);
+            var userId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.User);
 
             var newUser = new UserEntityModel
             {
@@ -289,7 +289,7 @@ public class UserController : LoggedInControllerBase
                 IsCaseWorkerManager = false,
             };
 
-            Db.WithinTenancy_Users.Add(newUser);
+            Db.Users.Add(newUser);
 
             // generate password-set token
             var rawTokenBytes = RandomNumberGenerator.GetBytes(32);
@@ -308,7 +308,7 @@ public class UserController : LoggedInControllerBase
                 Reason = PasswordSetTokenReasonEnum.NewAccount,
             };
 
-            Db.WithinTenancy_UserPasswordSetTokens.Add(passwordToken);
+            Db.UserPasswordSetTokens.Add(passwordToken);
             await Db.SaveChangesAsync();
 
             // send the welcome/password-set email
