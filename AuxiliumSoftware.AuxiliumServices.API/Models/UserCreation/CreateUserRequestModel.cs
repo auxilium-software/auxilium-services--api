@@ -19,4 +19,3 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Models.UserCreation
         public required string LanguagePreference { get; set; } = "en-GB";
     }
 }
-

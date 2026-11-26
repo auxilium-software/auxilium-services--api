@@ -46,7 +46,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 return (null, StatusCode(StatusCodes.Status403Forbidden, new FailureResponseModel { Detail = forbiddenDetail }));
             }
 
-            var userExists = await Db.WithinTenancy_Users.AnyAsync(u => u.Id == userId);
+            var userExists = await Db.Users.AnyAsync(u => u.Id == userId);
             if (!userExists)
             {
                 return (null, StatusCode(StatusCodes.Status404NotFound, new FailureResponseModel { Detail = "User not found" }));
@@ -228,7 +228,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 var (user, error) = await GetUserWithAccessCheckAsync(userId, "You can only modify your own properties");
                 if (error != null) return error;
 
-                var propertyExists = await Db.WithinTenancy_UserAdditionalProperties
+                var propertyExists = await Db.UserAdditionalProperties
                     .AnyAsync(p => p.UserId == userId && p.Id == propertyId);
                 if (!propertyExists)
                 {

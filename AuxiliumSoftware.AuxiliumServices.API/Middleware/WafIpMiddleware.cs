@@ -1,5 +1,4 @@
 ﻿using AuxiliumSoftware.AuxiliumServices.Common.Services;
-using AuxiliumSoftware.AuxiliumServices.Common.Tenancy;
 
 namespace AuxiliumSoftware.AuxiliumServices.API.Middleware
 {
@@ -12,14 +11,8 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Middleware
             _next = next;
         }
 
-        public async Task InvokeAsync(HttpContext context, IWebApplicationFirewallService waf, ITenantContext tenantContext)
+        public async Task InvokeAsync(HttpContext context, IWebApplicationFirewallService waf)
         {
-            if (!tenantContext.IsResolved)
-            {
-                await _next(context);
-                return;
-            }
-
             var ipAddress = context.Connection.RemoteIpAddress;
             if (ipAddress == null)
             {

@@ -75,7 +75,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.ControllerBases
                 }));
             }
 
-            var user = await Db.WithinTenancy_Users
+            var user = await Db.Users
                 .AsNoTracking()  // read-only query for better performance
                 .FirstOrDefaultAsync(u => u.Id == userId);
 

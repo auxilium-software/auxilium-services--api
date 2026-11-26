@@ -76,4 +76,3 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Models.User
         public required bool? IsEmailVerified { get; set; }
     }
 }
-

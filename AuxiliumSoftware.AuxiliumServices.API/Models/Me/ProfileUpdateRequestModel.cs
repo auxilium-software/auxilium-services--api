@@ -12,4 +12,3 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Models.Me
         public string? LanguagePreference { get; set; }
     }
 }
-

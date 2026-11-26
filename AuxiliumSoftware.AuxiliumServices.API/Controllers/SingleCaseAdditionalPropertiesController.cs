@@ -44,7 +44,7 @@ public class SingleCaseAdditionalPropertiesController : LoggedInControllerBase
         bool requireWorker = false
     )
     {
-        var caseEntity = await Db.WithinTenancy_Cases
+        var caseEntity = await Db.Cases
             .Include(c => c.Clients)
             .Include(c => c.Workers)
             .FirstOrDefaultAsync(c => c.Id == caseId);
@@ -292,7 +292,7 @@ public class SingleCaseAdditionalPropertiesController : LoggedInControllerBase
             var (caseEntity, caseError) = await GetCaseWithAccessCheckAsync(caseId, user!, requireWorker: true);
             if (caseError != null) return caseError;
 
-            var propertyExists = await Db.WithinTenancy_CaseAdditionalProperties
+            var propertyExists = await Db.CaseAdditionalProperties
                 .AnyAsync(p => p.CaseId == caseId && p.Id == propertyId);
             if (!propertyExists)
             {

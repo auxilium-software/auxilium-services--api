@@ -111,7 +111,7 @@ public class AuthenticationController : ControllerBase
             await strategy.ExecuteAsync(async () =>
             {
                 // check if user already exists
-                var existingUser = await _db.WithinTenancy_Users
+                var existingUser = await _db.Users
                     .FirstOrDefaultAsync(u => u.EmailAddress == request.EmailAddress);
 
                 if (existingUser != null)
@@ -120,9 +120,9 @@ public class AuthenticationController : ControllerBase
                 }
 
                 // generate UUIDs
-                var userId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.WithinTenancy_User);
-                var caseId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.WithinTenancy_Case);
-                var caseClientId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.WithinTenancy_Case_Client);
+                var userId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.User);
+                var caseId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.Case);
+                var caseClientId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.Case_Client);
 
                 // hash password
                 var normalised = this._passwordService.NormalisePassword(request.RawPassword, request.PasswordSha512);
@@ -162,8 +162,8 @@ public class AuthenticationController : ControllerBase
                 };
 
                 // add the user and the case to database
-                _db.WithinTenancy_Users.Add(user);
-                _db.WithinTenancy_Cases.Add(caseEntity);
+                _db.Users.Add(user);
+                _db.Cases.Add(caseEntity);
 
                 // add the user as a client of the case
                 var caseClient = new CaseClientEntityModel
@@ -174,7 +174,7 @@ public class AuthenticationController : ControllerBase
                     CaseId = caseId,
                     UserId = userId
                 };
-                _db.WithinTenancy_CaseClients.Add(caseClient);
+                _db.CaseClients.Add(caseClient);
 
                 var signUpDetails = new (string CanonicalName, string? Content)[]
                 {
@@ -186,7 +186,7 @@ public class AuthenticationController : ControllerBase
                 };
 
                 var canonicalNames = signUpDetails.Select(d => d.CanonicalName).ToList();
-                var definitions = await _db.WithinTenancy_UserAdditionalProperty_Definitions
+                var definitions = await _db.UserAdditionalProperty_Definitions
                     .Where(d => d.IsActive && canonicalNames.Contains(d.CanonicalName))
                     .ToDictionaryAsync(d => d.CanonicalName);
 
@@ -197,9 +197,9 @@ public class AuthenticationController : ControllerBase
 
                     definitions.TryGetValue(canonicalName, out var definition);
 
-                    _db.WithinTenancy_UserAdditionalProperties.Add(new UserAdditionalPropertyEntityModel
+                    _db.UserAdditionalProperties.Add(new UserAdditionalPropertyEntityModel
                     {
-                        Id = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.WithinTenancy_User_AdditionalProperty),
+                        Id = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.User_AdditionalProperty),
                         CreatedAtUtc = DateTime.UtcNow,
                         CreatedByUserId = userId,
                         UserId = userId,
@@ -215,7 +215,7 @@ public class AuthenticationController : ControllerBase
                 await _db.SaveChangesAsync();
 
                 var portalBaseUrl = await _systemSettings.GetStringAsync(SystemSettingKeyEnum.Instance_Navigation_PortalBaseUrl);
-                foreach (var caseWorkerManagerUser in _db.WithinTenancy_Users.Where(u => u.IsCaseWorkerManager == true))
+                foreach (var caseWorkerManagerUser in _db.Users.Where(u => u.IsCaseWorkerManager == true))
                 {
 
                     await _messageQueueProducer.PublishAsync(new EmailQueueMessage
@@ -285,7 +285,7 @@ public class AuthenticationController : ControllerBase
             var strategy = _db.Database.CreateExecutionStrategy();
             UserLoginResponseModel? response = null;
 
-            var user = await _db.WithinTenancy_Users.FirstOrDefaultAsync(u => u.EmailAddress == request.EmailAddress);
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.EmailAddress == request.EmailAddress);
 
             if (user == null)
             {
@@ -311,9 +311,9 @@ public class AuthenticationController : ControllerBase
             {
                 var (rawToken, tokenHash) = _passwordService.GeneratePasswordSetToken();
 
-                _db.WithinTenancy_UserPasswordSetTokens.Add(new PasswordSetTokenEntityModel
+                _db.UserPasswordSetTokens.Add(new PasswordSetTokenEntityModel
                 {
-                    Id = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.WithinTenancy_User_PasswordSetToken),
+                    Id = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.User_PasswordSetToken),
                     UserId = user.Id,
                     TokenHash = tokenHash,
                     Reason = PasswordSetTokenReasonEnum.Auxilium1BCryptMigration,
@@ -453,7 +453,7 @@ public class AuthenticationController : ControllerBase
             var strategy = _db.Database.CreateExecutionStrategy();
             UserLoginResponseModel? response = null;
 
-            var user = await _db.WithinTenancy_Users.FirstOrDefaultAsync(u => u.Id == userId);
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
             {
@@ -523,7 +523,7 @@ public class AuthenticationController : ControllerBase
 
             await strategy.ExecuteAsync(async () =>
             {
-                var user = await _db.WithinTenancy_Users.FirstOrDefaultAsync(u => u.Id == userId);
+                var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
                 if (user == null)
                 {
@@ -538,7 +538,7 @@ public class AuthenticationController : ControllerBase
                 // hash the provided recovery code and look for a match
                 var codeHash = HashingUtilities.SHA256Hash(request.RecoveryCode);
 
-                var recoveryCode = await _db.WithinTenancy_UserTotpRecoveryCodes
+                var recoveryCode = await _db.UserTotpRecoveryCodes
                     .FirstOrDefaultAsync(rc =>
                         rc.CreatedByUserId == userId &&
                         rc.CodeHash == codeHash &&
@@ -608,7 +608,7 @@ public class AuthenticationController : ControllerBase
                 });
             }
 
-            var user = await _db.WithinTenancy_Users.FirstOrDefaultAsync(u => u.Id == userId);
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
             {
@@ -681,7 +681,7 @@ public class AuthenticationController : ControllerBase
             var tokenHash = HashingUtilities.SHA256Hash(request.RefreshToken);
 
             // verify the refresh token and get user
-            var refreshToken = await this._db.WithinTenancy_UserRefreshTokens
+            var refreshToken = await this._db.UserRefreshTokens
                 .Include(rt => rt.CreatedByUser)
                 .FirstOrDefaultAsync(rt =>
                     rt.TokenHash == tokenHash &&
@@ -780,12 +780,12 @@ public class AuthenticationController : ControllerBase
         var refreshToken = _tokenService.CreateRefreshToken(userData);
 
         // remove expired refresh tokens
-        var expiredTokens = _db.WithinTenancy_UserRefreshTokens
+        var expiredTokens = _db.UserRefreshTokens
             .Where(rt => rt.CreatedByUserId == user.Id && rt.ExpiresAtUtc < DateTime.UtcNow);
-        _db.WithinTenancy_UserRefreshTokens.RemoveRange(expiredTokens);
+        _db.UserRefreshTokens.RemoveRange(expiredTokens);
 
         // store the new refresh token
-        var refreshTokenId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.WithinTenancy_User_RefreshToken);
+        var refreshTokenId = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.User_RefreshToken);
         var tokenHash = HashingUtilities.SHA256Hash(refreshToken);
         var expiresAtTime = DateTime.UtcNow.AddDays(_configuration.JWT.RefreshTokenExpirationInDays);
 
@@ -797,7 +797,7 @@ public class AuthenticationController : ControllerBase
             TokenHash = tokenHash,
             ExpiresAtUtc = expiresAtTime
         };
-        _db.WithinTenancy_UserRefreshTokens.Add(refreshTokenEntity);
+        _db.UserRefreshTokens.Add(refreshTokenEntity);
 
         await _db.SaveChangesAsync();
 
@@ -838,7 +838,7 @@ public class AuthenticationController : ControllerBase
             // hash the incoming token to match against stored hash
             var tokenHash = _passwordService.HashToken(request.Token);
 
-            var token = await _db.WithinTenancy_UserPasswordSetTokens
+            var token = await _db.UserPasswordSetTokens
                 .Include(t => t.User)
                 .FirstOrDefaultAsync(t =>
                     t.TokenHash == tokenHash &&
@@ -863,7 +863,7 @@ public class AuthenticationController : ControllerBase
             }
 
             // invalidate all unused tokens for this user (including this one)
-            var allTokens = await _db.WithinTenancy_UserPasswordSetTokens
+            var allTokens = await _db.UserPasswordSetTokens
                 .Where(t => t.UserId == user.Id && !t.UsedAtUtc.HasValue)
                 .ToListAsync();
 

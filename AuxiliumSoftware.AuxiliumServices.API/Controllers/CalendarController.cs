@@ -72,7 +72,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 var endUtc = end.ToUniversalTime();
 
                 //TODO: don't use EF directly here
-                var manualQuery = Db.WithinTenancy_CalendarEvents
+                var manualQuery = Db.CalendarEvents
                     .Include(e => e.Invites)
                     .Where(e => e.StartUtc < endUtc && e.EndUtc > startUtc)
                     .Where(e => e.CreatedByUserId == user!.Id || (e.Invites != null && e.Invites.Any(i => i.InvitedUserId == user!.Id)));
@@ -127,7 +127,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 var (user, error) = await RequireCalendarAccessAsync();
                 if (error != null) return error;
 
-                var entity = await Db.WithinTenancy_CalendarEvents.Include(e => e.Invites).FirstOrDefaultAsync(e => e.Id == id, ct);
+                var entity = await Db.CalendarEvents.Include(e => e.Invites).FirstOrDefaultAsync(e => e.Id == id, ct);
                 if (entity == null)
                 {
                     return StatusCode(StatusCodes.Status404NotFound, new FailureResponseModel { Detail = "Calendar event not found" });
@@ -215,7 +215,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 };
 
                 //TODO: don't use EF directly here
-                Db.WithinTenancy_CalendarEvents.Add(entity);
+                Db.CalendarEvents.Add(entity);
                 await Db.SaveChangesAsync(ct);
 
                 this.Logger.LogInformation(
@@ -249,7 +249,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 var (user, error) = await RequireCalendarAccessAsync();
                 if (error != null) return error;
 
-                var entity = await Db.WithinTenancy_CalendarEvents.Include(e => e.Invites).FirstOrDefaultAsync(e => e.Id == id, ct);
+                var entity = await Db.CalendarEvents.Include(e => e.Invites).FirstOrDefaultAsync(e => e.Id == id, ct);
                 if (entity == null)
                 {
                     return StatusCode(StatusCodes.Status404NotFound, new FailureResponseModel { Detail = "Calendar event not found" });
@@ -331,7 +331,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 var (user, error) = await RequireCalendarAccessAsync();
                 if (error != null) return error;
 
-                var entity = await Db.WithinTenancy_CalendarEvents.FirstOrDefaultAsync(e => e.Id == id, ct);
+                var entity = await Db.CalendarEvents.FirstOrDefaultAsync(e => e.Id == id, ct);
                 if (entity == null)
                 {
                     return StatusCode(StatusCodes.Status404NotFound, new FailureResponseModel { Detail = "Calendar event not found" });
@@ -346,7 +346,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                     });
                 }
 
-                Db.WithinTenancy_CalendarEvents.Remove(entity);
+                Db.CalendarEvents.Remove(entity);
                 await Db.SaveChangesAsync(ct);
 
                 this.Logger.LogInformation("Deleted calendar event {EventId} by user {UserId}", id, user.Id);
@@ -379,7 +379,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 var (user, error) = await RequireCalendarAccessAsync();
                 if (error != null) return error;
 
-                var entity = await Db.WithinTenancy_CalendarEvents.Include(e => e.Invites).FirstOrDefaultAsync(e => e.Id == id, ct);
+                var entity = await Db.CalendarEvents.Include(e => e.Invites).FirstOrDefaultAsync(e => e.Id == id, ct);
                 if (entity == null)
                 {
                     return StatusCode(StatusCodes.Status404NotFound, new FailureResponseModel { Detail = "Calendar event not found" });
@@ -449,7 +449,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 var (user, error) = await RequireCalendarAccessAsync();
                 if (error != null) return error;
 
-                var entity = await Db.WithinTenancy_CalendarEvents.Include(e => e.Invites).FirstOrDefaultAsync(e => e.Id == id, ct);
+                var entity = await Db.CalendarEvents.Include(e => e.Invites).FirstOrDefaultAsync(e => e.Id == id, ct);
                 if (entity == null)
                 {
                     return StatusCode(StatusCodes.Status404NotFound, new FailureResponseModel { Detail = "Calendar event not found" });
@@ -496,7 +496,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 var (user, error) = await RequireCalendarAccessAsync();
                 if (error != null) return error;
 
-                var entity = await Db.WithinTenancy_CalendarEvents.Include(e => e.Invites).FirstOrDefaultAsync(e => e.Id == id, ct);
+                var entity = await Db.CalendarEvents.Include(e => e.Invites).FirstOrDefaultAsync(e => e.Id == id, ct);
                 if (entity == null)
                 {
                     return StatusCode(StatusCodes.Status404NotFound, new FailureResponseModel { Detail = "Calendar event not found" });
@@ -513,7 +513,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                     return StatusCode(StatusCodes.Status404NotFound, new FailureResponseModel { Detail = "Invite not found" });
                 }
 
-                Db.WithinTenancy_CalendarEventInvites.Remove(invite);
+                Db.CalendarEventInvites.Remove(invite);
                 await Db.SaveChangesAsync(ct);
 
                 this.Logger.LogInformation("Removed invite for user {InvitedUserId} from calendar event {EventId} by user {UserId}", userId, id, user.Id);
@@ -692,7 +692,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
         private async Task<ActionResult?> ValidateUserIdsAsync(List<Guid> userIds, CancellationToken ct)
         {
             var distinctIds = userIds.Distinct().ToList();
-            var users = await Db.WithinTenancy_Users.Where(u => distinctIds.Contains(u.Id)).ToListAsync(ct);
+            var users = await Db.Users.Where(u => distinctIds.Contains(u.Id)).ToListAsync(ct);
 
             if (users.Count != distinctIds.Count)
             {
@@ -727,7 +727,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
             var distinctIds = userIds.Distinct().ToList();
             if (distinctIds.Count == 0) return new Dictionary<Guid, string>();
 
-            return await Db.WithinTenancy_Users
+            return await Db.Users
                 .Where(u => distinctIds.Contains(u.Id))
                 .ToDictionaryAsync(u => u.Id, u => u.FullName, ct);
         }
@@ -736,11 +736,11 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
         {
             if (user.IsAdministrator)
             {
-                return (await Db.WithinTenancy_Cases.Select(c => c.Id).ToListAsync(ct)).ToHashSet();
+                return (await Db.Cases.Select(c => c.Id).ToListAsync(ct)).ToHashSet();
             }
 
-            var asClient = Db.WithinTenancy_CaseClients.Where(cc => cc.UserId == user.Id).Select(cc => cc.CaseId);
-            var asWorker = Db.WithinTenancy_CaseWorkers.Where(cw => cw.UserId == user.Id).Select(cw => cw.CaseId);
+            var asClient = Db.CaseClients.Where(cc => cc.UserId == user.Id).Select(cc => cc.CaseId);
+            var asWorker = Db.CaseWorkers.Where(cw => cw.UserId == user.Id).Select(cw => cw.CaseId);
 
             return (await asClient.Union(asWorker).ToListAsync(ct)).ToHashSet();
         }
@@ -755,7 +755,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
 
             var results = new List<CalendarEventResponseModel>();
 
-            var dueTodos = await Db.WithinTenancy_CaseTodos
+            var dueTodos = await Db.CaseTodos
                 .Where(t => accessibleCaseIds.Contains(t.CaseId) && t.DueDate != null && t.DueDate >= startUtc && t.DueDate < endUtc)
                 .ToListAsync(ct);
             foreach (var todo in dueTodos)
@@ -776,7 +776,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 });
             }
 
-            var reminderTodos = await Db.WithinTenancy_CaseTodos
+            var reminderTodos = await Db.CaseTodos
                 .Where(t => accessibleCaseIds.Contains(t.CaseId) && t.ReminderUtc != null && t.ReminderUtc >= startUtc && t.ReminderUtc < endUtc)
                 .ToListAsync(ct);
             foreach (var todo in reminderTodos)
@@ -797,7 +797,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Controllers
                 });
             }
 
-            var timelineEntries = await Db.WithinTenancy_CaseTimelineEntries
+            var timelineEntries = await Db.CaseTimelineEntries
                 .Where(e => accessibleCaseIds.Contains(e.CaseId) && e.OccurredAtUtc >= startUtc && e.OccurredAtUtc < endUtc)
                 .ToListAsync(ct);
             foreach (var entry in timelineEntries)
