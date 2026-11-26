@@ -89,7 +89,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Mappers
             };
         }
 
-        private static string ResolveDisplayName(
+        internal static string ResolveDisplayName(
             string canonicalName,
             IEnumerable<(string LanguageCode, string Translation)> translations,
             string? locale
@@ -117,3 +117,4 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Mappers
         #endregion
     }
 }
+

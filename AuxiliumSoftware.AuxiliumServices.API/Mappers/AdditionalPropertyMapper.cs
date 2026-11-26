@@ -19,6 +19,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Mappers
                 Content = property.Content,
                 ContentType = property.ContentType,
                 GroupId = property.GroupId,
+                DefinitionId = property.DefinitionId,
             };
         }
 
@@ -45,6 +46,7 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Mappers
                 Content = property.Content,
                 ContentType = property.ContentType,
                 GroupId = property.GroupId,
+                DefinitionId = property.DefinitionId,
             };
         }
 

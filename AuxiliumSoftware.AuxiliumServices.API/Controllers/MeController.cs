@@ -83,12 +83,7 @@ public class MeController : LoggedInControllerBase
                 IsEmailVerified = userDoc.HasEmailAddressBeenVerified,
 
                 FullName = userDoc.FullName ?? string.Empty,
-                FullAddress = userDoc.FullAddress ?? string.Empty,
-                TelephoneNumber = userDoc.TelephoneNumber ?? string.Empty,
-                Gender = userDoc.Gender ?? string.Empty,
-                DateOfBirth = userDoc.DateOfBirth,
                 LanguagePreference = userDoc.LanguagePreference ?? string.Empty,
-                HowDidYouFindOutAboutOurService = userDoc.HowDidYouFindOutAboutOurService ?? string.Empty,
 
                 AdditionalProperties = additionalProperties,
                 Files = new List<string>() //TODO: sort this out
@@ -128,21 +123,6 @@ public class MeController : LoggedInControllerBase
             // update fields if provided
             if (request.FullName != null)
                 userDoc.FullName = request.FullName;
-
-            if (request.FullAddress != null)
-                userDoc.FullAddress = request.FullAddress;
-
-            if (request.TelephoneNumber != null)
-                userDoc.TelephoneNumber = request.TelephoneNumber;
-
-            if (request.Gender != null)
-                userDoc.Gender = request.Gender;
-
-            if (request.DateOfBirth.HasValue)
-                userDoc.DateOfBirth = request.DateOfBirth.Value;
-
-            if (request.HowDidYouFindOutAboutOurService != null)
-                userDoc.HowDidYouFindOutAboutOurService = request.HowDidYouFindOutAboutOurService;
 
             if (request.LanguagePreference != null)
                 userDoc.LanguagePreference = request.LanguagePreference;

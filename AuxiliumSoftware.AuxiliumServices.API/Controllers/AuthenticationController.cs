@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -96,6 +97,14 @@ public class AuthenticationController : ControllerBase
             string? clientIp = HttpContext.Connection.RemoteIpAddress?.ToString();
             await _captchaService.VerifyRecaptchaAsync(request.RecaptchaToken, clientIp);
 
+            if (!DateOnly.TryParse(request.DateOfBirth, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateOfBirth))
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new FailureResponseModel
+                {
+                    Detail = "Date of birth is not a valid date"
+                });
+            }
+
             var strategy = _db.Database.CreateExecutionStrategy();
             Guid? createdUserId = null;
 
@@ -126,12 +135,7 @@ public class AuthenticationController : ControllerBase
                     EmailAddress = request.EmailAddress,
                     PasswordHash = passwordHash,
                     FullName = request.FullName,
-                    FullAddress = request.FullAddress,
-                    TelephoneNumber = request.TelephoneNumber,
-                    Gender = request.Gender,
-                    DateOfBirth = DateOnly.Parse(request.DateOfBirth),
                     LanguagePreference = request.LanguagePreference,
-                    HowDidYouFindOutAboutOurService = request.HowDidYouFindOutAboutOurService,
                     IsAdministrator = false,
                     IsCaseWorker = false,
                     IsCaseWorkerManager = false,
@@ -171,6 +175,41 @@ public class AuthenticationController : ControllerBase
                     UserId = userId
                 };
                 _db.WithinTenancy_CaseClients.Add(caseClient);
+
+                var signUpDetails = new (string CanonicalName, string? Content)[]
+                {
+                    (Common.WellKnownUserAdditionalProperties.FullAddress, request.FullAddress),
+                    (Common.WellKnownUserAdditionalProperties.TelephoneNumber, request.TelephoneNumber),
+                    (Common.WellKnownUserAdditionalProperties.Gender, request.Gender),
+                    (Common.WellKnownUserAdditionalProperties.DateOfBirth, dateOfBirth.ToString(Common.WellKnownUserAdditionalProperties.DateFormat, CultureInfo.InvariantCulture)),
+                    (Common.WellKnownUserAdditionalProperties.HowDidYouFindOutAboutOurService, request.HowDidYouFindOutAboutOurService),
+                };
+
+                var canonicalNames = signUpDetails.Select(d => d.CanonicalName).ToList();
+                var definitions = await _db.WithinTenancy_UserAdditionalProperty_Definitions
+                    .Where(d => d.IsActive && canonicalNames.Contains(d.CanonicalName))
+                    .ToDictionaryAsync(d => d.CanonicalName);
+
+                foreach (var (canonicalName, content) in signUpDetails)
+                {
+                    if (string.IsNullOrWhiteSpace(content))
+                        continue;
+
+                    definitions.TryGetValue(canonicalName, out var definition);
+
+                    _db.WithinTenancy_UserAdditionalProperties.Add(new UserAdditionalPropertyEntityModel
+                    {
+                        Id = UUIDUtilities.GenerateV5(DatabaseObjectTypeEnum.WithinTenancy_User_AdditionalProperty),
+                        CreatedAtUtc = DateTime.UtcNow,
+                        CreatedByUserId = userId,
+                        UserId = userId,
+                        GroupId = definition?.DefaultGroupId,
+                        DefinitionId = definition?.Id,
+                        DisplayName = BuiltInDisplayName(canonicalName),
+                        ContentType = "text/plain",
+                        Content = content.Trim(),
+                    });
+                }
 
                 // save all changes
                 await _db.SaveChangesAsync();
@@ -863,5 +902,15 @@ public class AuthenticationController : ControllerBase
                 Detail = "An error occurred while setting the password"
             });
         }
+    }
+
+    private static string BuiltInDisplayName(string canonicalName)
+    {
+        var entry = BuiltInAdditionalPropertyDefinitionCatalogue.User.FirstOrDefault(e => e.CanonicalName == canonicalName)
+            ?? throw new InvalidOperationException($"{canonicalName} isn't a built-in user additional property definition");
+
+        return entry.Translations.TryGetValue(Common.WellKnownUserAdditionalProperties.DisplayNameLanguageCode, out var label)
+            ? label
+            : canonicalName;
     }
 }

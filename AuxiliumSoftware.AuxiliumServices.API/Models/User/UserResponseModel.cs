@@ -40,22 +40,6 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Models.User
         public required string FullName { get; set; }
 
         [Required]
-        [JsonPropertyName("fullAddress")]
-        public required string FullAddress { get; set; }
-
-        [Required]
-        [JsonPropertyName("telephoneNumber")]
-        public required string TelephoneNumber { get; set; }
-
-        [Required]
-        [JsonPropertyName("gender")]
-        public required string Gender { get; set; }
-
-        [Required]
-        [JsonPropertyName("dateOfBirth")]
-        public required DateOnly? DateOfBirth { get; set; }
-
-        [Required]
         [JsonPropertyName("languagePreference")]
         public required string LanguagePreference { get; set; }
 
@@ -70,10 +54,6 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Models.User
         public required List<string> Files { get; set; }
 
 
-
-        [Required]
-        [JsonPropertyName("howDidYouFindOutAboutOurService")]
-        public required string? HowDidYouFindOutAboutOurService { get; set; }
 
         [Required]
         [JsonPropertyName("isAdministrator")]
@@ -96,3 +76,4 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Models.User
         public required bool? IsEmailVerified { get; set; }
     }
 }
+

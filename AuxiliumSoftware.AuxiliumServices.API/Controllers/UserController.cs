@@ -122,70 +122,7 @@ public class UserController : LoggedInControllerBase
 
             foreach (var userDoc in users)
             {
-                if (user.IsAdministrator)
-                {
-                    // admins get all data including additional properties
-                    var additionalProperties = AdditionalPropertyMapper.ToSubStructureDictionary(userDoc.AdditionalProperties);
-
-                    userResponses.Add(new UserResponseModel
-                    {
-                        ID = userDoc.Id,
-                        CreatedAt = userDoc.CreatedAtUtc,
-                        CreatedBy = userDoc.CreatedByUserId,
-                        LastUpdatedAt = userDoc.LastUpdatedAtUtc,
-                        LastUpdatedBy = userDoc.LastUpdatedByUserId,
-
-                        EmailAddress = userDoc.EmailAddress,
-                        FullName = userDoc.FullName ?? string.Empty,
-                        FullAddress = userDoc.FullAddress ?? string.Empty,
-                        TelephoneNumber = userDoc.TelephoneNumber ?? string.Empty,
-                        Gender = userDoc.Gender ?? string.Empty,
-                        DateOfBirth = userDoc.DateOfBirth,
-                        LanguagePreference = userDoc.LanguagePreference,
-
-                        AdditionalProperties = additionalProperties,
-                        Files = new List<string>(),
-
-                        HowDidYouFindOutAboutOurService = userDoc.HowDidYouFindOutAboutOurService ?? string.Empty,
-
-                        IsEmailVerified = userDoc.HasEmailAddressBeenVerified,
-                        AllowLogin = userDoc.AllowLogin,
-                        IsAdministrator = userDoc.IsAdministrator,
-                        IsCaseWorkerManager = userDoc.IsCaseWorkerManager,
-                        IsCaseWorker = userDoc.IsCaseWorker
-                    });
-                }
-                else
-                {
-                    // non-admins get redacted data
-                    userResponses.Add(new UserResponseModel
-                    {
-                        ID = userDoc.Id,
-                        CreatedAt = userDoc.CreatedAtUtc,
-                        CreatedBy = userDoc.CreatedByUserId,
-                        LastUpdatedAt = null,
-                        LastUpdatedBy = null,
-
-                        EmailAddress = "[REDACTED]",
-                        FullName = userDoc.FullName ?? string.Empty,
-                        FullAddress = "[REDACTED]",
-                        TelephoneNumber = "[REDACTED]",
-                        Gender = "[REDACTED]",
-                        DateOfBirth = null,
-                        LanguagePreference = "[REDACTED]",
-
-                        AdditionalProperties = new Dictionary<string, AdditionalPropertySubStructureDTO>(),
-                        Files = new List<string>(),
-
-                        HowDidYouFindOutAboutOurService = "[REDACTED]",
-
-                        IsEmailVerified = null,
-                        AllowLogin = null,
-                        IsAdministrator = null,
-                        IsCaseWorkerManager = null,
-                        IsCaseWorker = null
-                    });
-                }
+                userResponses.Add(ControllerUtilities.UserMapToUserResponseModel(userDoc, user.IsAdministrator));
             }
 
             var response = new PaginatedUsersResponseModel
@@ -341,10 +278,6 @@ public class UserController : LoggedInControllerBase
                 CreatedByUserId = user.Id,
                 EmailAddress = request.EmailAddress,
                 FullName = request.FullName,
-                FullAddress = "",
-                TelephoneNumber = "",
-                Gender = "",
-                DateOfBirth = new DateOnly(),
                 LanguagePreference = request.LanguagePreference,
                 PasswordHash = string.Empty, // no password yet - set via token
                 AllowLogin = false,          // locked until password is set
@@ -354,7 +287,6 @@ public class UserController : LoggedInControllerBase
                 IsAdministrator = false,
                 IsCaseWorker = false,
                 IsCaseWorkerManager = false,
-                HowDidYouFindOutAboutOurService = ""
             };
 
             Db.WithinTenancy_Users.Add(newUser);

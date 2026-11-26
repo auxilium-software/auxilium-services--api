@@ -174,23 +174,8 @@ public class SingleUserController : LoggedInControllerBase
             }
             */
 
-            if (request.TelephoneNumber != null && request.TelephoneNumber != userDoc.TelephoneNumber)
-                userDoc.TelephoneNumber = request.TelephoneNumber;
-
-            if (request.FullAddress != null && request.FullAddress != userDoc.FullAddress)
-                userDoc.FullAddress = request.FullAddress;
-
-            if (request.Gender != null && request.Gender != userDoc.Gender)
-                userDoc.Gender = request.Gender;
-
-            if (request.DateOfBirth.HasValue && request.DateOfBirth.Value != userDoc.DateOfBirth)
-                userDoc.DateOfBirth = request.DateOfBirth.Value;
-
             if (request.LanguagePreference != null && request.LanguagePreference != userDoc.LanguagePreference)
                 userDoc.LanguagePreference = request.LanguagePreference;
-
-            if (request.HowDidYouFindOutAboutOurService != null && request.HowDidYouFindOutAboutOurService != userDoc.HowDidYouFindOutAboutOurService)
-                userDoc.HowDidYouFindOutAboutOurService = request.HowDidYouFindOutAboutOurService;
 
             userDoc.LastUpdatedAtUtc = DateTime.UtcNow;
             userDoc.LastUpdatedByUserId = user!.Id;
@@ -216,3 +201,4 @@ public class SingleUserController : LoggedInControllerBase
         }
     }
 }
+

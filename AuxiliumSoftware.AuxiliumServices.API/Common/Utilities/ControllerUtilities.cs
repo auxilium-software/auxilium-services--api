@@ -1,4 +1,5 @@
-﻿using AuxiliumSoftware.AuxiliumServices.API.Models.Case;
+﻿using AuxiliumSoftware.AuxiliumServices.API.Mappers;
+using AuxiliumSoftware.AuxiliumServices.API.Models.Case;
 using AuxiliumSoftware.AuxiliumServices.API.Models.User;
 using AuxiliumSoftware.AuxiliumServices.Common.DataTransferObjects;
 using AuxiliumSoftware.AuxiliumServices.Common.EntityFramework;
@@ -77,22 +78,6 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
         {
             if (isAdmin)
             {
-                var additionalProperties = userDoc.AdditionalProperties?
-                    .ToDictionary(
-                        p => p.Id.ToString(),
-                        p => new AdditionalPropertySubStructureDTO
-                        {
-                            Id = p.Id,
-                            CreatedAt = p.CreatedAtUtc,
-                            CreatedBy = p.CreatedByUserId,
-                            UpdatedAt = p.LastUpdatedAtUtc,
-                            LastUpdatedBy = p.LastUpdatedByUserId,
-                            DisplayName = p.DisplayName,
-                            Content = p.Content,
-                            ContentType = p.ContentType
-                        }
-                    ) ?? new Dictionary<string, AdditionalPropertySubStructureDTO>();
-
                 return new UserResponseModel
                 {
                     ID = userDoc.Id,
@@ -101,18 +86,12 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
                     LastUpdatedAt = userDoc.LastUpdatedAtUtc,
                     LastUpdatedBy = userDoc.LastUpdatedByUserId,
 
-                    EmailAddress = userDoc.EmailAddress,
+                    EmailAddress = userDoc.EmailAddress ?? string.Empty,
                     FullName = userDoc.FullName ?? string.Empty,
-                    FullAddress = userDoc.FullAddress ?? string.Empty,
-                    TelephoneNumber = userDoc.TelephoneNumber ?? string.Empty,
-                    Gender = userDoc.Gender ?? string.Empty,
-                    DateOfBirth = userDoc.DateOfBirth,
-                    LanguagePreference = userDoc.LanguagePreference,
+                    LanguagePreference = userDoc.LanguagePreference ?? string.Empty,
 
-                    AdditionalProperties = additionalProperties,
+                    AdditionalProperties = AdditionalPropertyMapper.ToSubStructureDictionary(userDoc.AdditionalProperties),
                     Files = userDoc.Files?.Select(f => $"auxlfs://localhost/user-file/{f.Id}").ToList() ?? new List<string>(),
-
-                    HowDidYouFindOutAboutOurService = userDoc.HowDidYouFindOutAboutOurService ?? string.Empty,
 
                     IsEmailVerified = userDoc.HasEmailAddressBeenVerified,
                     AllowLogin = userDoc.AllowLogin,
@@ -132,16 +111,10 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
 
                 EmailAddress = "[REDACTED]",
                 FullName = userDoc.FullName ?? string.Empty,
-                FullAddress = "[REDACTED]",
-                TelephoneNumber = "[REDACTED]",
-                Gender = "[REDACTED]",
-                DateOfBirth = null,
                 LanguagePreference = "[REDACTED]",
 
                 AdditionalProperties = new Dictionary<string, AdditionalPropertySubStructureDTO>(),
                 Files = new List<string>(),
-
-                HowDidYouFindOutAboutOurService = "[REDACTED]",
 
                 IsEmailVerified = null,
                 AllowLogin = null,
@@ -424,3 +397,4 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Common.Utilities
         }
     }
 }
+

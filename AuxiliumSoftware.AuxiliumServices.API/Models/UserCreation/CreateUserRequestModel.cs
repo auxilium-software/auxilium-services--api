@@ -14,14 +14,9 @@ namespace AuxiliumSoftware.AuxiliumServices.API.Models.UserCreation
         [JsonPropertyName("emailAddress")]
         public required string EmailAddress { get; set; } = string.Empty;
 
-        [JsonPropertyName("telephoneNumber")]
-        public string? TelephoneNumber { get; set; }
-
-        [JsonPropertyName("dateOfBirth")]
-        public DateTime? DateOfBirth { get; set; }
-
         [Required]
         [JsonPropertyName("languagePreference")]
         public required string LanguagePreference { get; set; } = "en-GB";
     }
 }
+
